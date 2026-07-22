@@ -1,0 +1,13 @@
+{% load i18n %}
+{% blocktranslate %}Bonjour {{ user_display }},{% endblocktranslate %}
+
+{% blocktranslate %}Vous recevez cet e-mail car vous avez créé un compte sur notre application.{% endblocktranslate %}
+
+{% blocktranslate %}Pour confirmer votre adresse e-mail et finaliser votre inscription, merci de cliquer sur le lien ci-dessous :{% endblocktranslate %}
+
+{{ activate_url }}
+
+{% blocktranslate %}Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.{% endblocktranslate %}
+
+{% translate "À bientôt," %}
+{% translate "L'équipe." %}

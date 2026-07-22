@@ -1,0 +1,11 @@
+{% load i18n %}
+{% blocktranslate %}Bonjour {{ user_display }},{% endblocktranslate %}
+
+{% blocktranslate %}Voici votre code de vérification pour confirmer votre adresse e-mail :{% endblocktranslate %}
+
+{{ code }}
+
+{% blocktranslate %}Ce code expire dans 10 minutes. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.{% endblocktranslate %}
+
+{% translate "À bientôt," %}
+{% translate "L'équipe." %}

@@ -1,0 +1,113 @@
+{
+  "common": {
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "getStarted": "Démarrer",
+    "demo": "Voir la démo",
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs",
+    "about": "À propos",
+    "logout": "Déconnexion",
+    "welcome": "Bonjour {{name}}",
+    "backToHome": "Retour à l'accueil",
+    "allRightsReserved": "Tous droits réservés."
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Entrez vos identifiants pour accéder à votre compte",
+      "emailLabel": "Adresse email",
+      "passwordLabel": "Mot de passe",
+      "submit": "Se connecter",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "S'inscrire",
+      "error": "Email ou mot de passe incorrect.",
+      "notVerified": "Veuillez vérifier votre email avant de vous connecter.",
+      "forgotPassword": "Mot de passe oublié ?"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Remplissez les informations pour nous rejoindre",
+      "nameLabel": "Nom complet",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "submit": "Créer un compte",
+      "haveAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter",
+      "success": "Inscription réussie ! Veuillez vérifier votre email.",
+      "error": "Erreur lors de l'inscription. Vérifiez les données.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "passwordInvalid": "Le mot de passe doit contenir au moins 9 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
+    },
+    "verify": {
+      "title": "Vérification de l'email",
+      "loading": "Vérification en cours...",
+      "success": "Votre email a été vérifié avec succès !",
+      "error": "Lien de vérification invalide ou expiré.",
+      "backToLogin": "Retour à la connexion"
+    },
+    "verifyCode": {
+      "title": "Vérifiez votre email",
+      "subtitle": "Entrez le code à 6 chiffres envoyé à {{email}}",
+      "submit": "Vérifier",
+      "verifying": "Vérification en cours...",
+      "error": "Ce code est invalide ou a expiré.",
+      "missingEmail": "Aucune adresse email à vérifier. Veuillez vous réinscrire.",
+      "resend": "Renvoyer le code",
+      "resendIn": "Renvoyer le code dans {{seconds}}s",
+      "resendSuccess": "Un nouveau code a été envoyé.",
+      "resendError": "Une erreur est survenue. Veuillez réessayer.",
+      "backToRegister": "Retour à l'inscription"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Entrez votre adresse email et nous vous enverrons un lien de réinitialisation",
+      "submit": "Envoyer le lien",
+      "success": "Si un compte existe pour cette adresse, vous recevrez un email avec les instructions.",
+      "error": "Une erreur est survenue. Veuillez réessayer.",
+      "backToLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Choisissez un nouveau mot de passe pour votre compte",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "confirmPasswordLabel": "Confirmer le nouveau mot de passe",
+      "submit": "Réinitialiser le mot de passe",
+      "success": "Votre mot de passe a été réinitialisé avec succès !",
+      "error": "Ce lien de réinitialisation est invalide ou a expiré.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "passwordInvalid": "Le mot de passe doit contenir au moins 9 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.",
+      "backToLogin": "Retour à la connexion"
+    },
+    "common": {
+      "google": "Continuer avec Google",
+      "or": "Ou continuer avec"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Boostez votre productivité pour demain",
+      "subtitle": "Une solution innovante conçue pour simplifier vos processus complexes. Gagnez du temps et concentrez-vous sur ce qui compte vraiment pour votre entreprise."
+    },
+    "demoSection": {
+      "title": "Vidéo de démonstration"
+    },
+    "featuresSection": {
+      "title": "Tout ce dont vous avez besoin",
+      "subtitle": "Notre plateforme offre les outils nécessaires pour faire passer votre projet au niveau supérieur.",
+      "items": {
+        "performance": {
+          "title": "Performance éclair",
+          "description": "Optimisé pour la vitesse et une réactivité maximale sur tous les appareils."
+        },
+        "security": {
+          "title": "Sécurité renforcée",
+          "description": "Vos données sont protégées par les protocoles de sécurité les plus avancés."
+        },
+        "deployment": {
+          "title": "Déploiement rapide",
+          "description": "Passez de l'idée à la production en quelques minutes seulement."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+.git
+.gitignore
+.idea
+.claude
+.venv
+.env
+.env.example
+*.pyc
+__pycache__/
+db.sqlite3
+staticfiles/
+README.md
+LICENSE
+CLAUDE.md
+docker-compose.yml
+front/

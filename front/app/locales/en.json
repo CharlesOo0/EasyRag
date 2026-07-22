@@ -1,0 +1,113 @@
+{
+  "common": {
+    "login": "Login",
+    "register": "Register",
+    "getStarted": "Get Started",
+    "demo": "Watch Demo",
+    "features": "Features",
+    "pricing": "Pricing",
+    "about": "About",
+    "logout": "Logout",
+    "welcome": "Welcome {{name}}",
+    "backToHome": "Back to Home",
+    "allRightsReserved": "All rights reserved."
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Enter your credentials to access your account",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "submit": "Login",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register",
+      "error": "Incorrect email or password.",
+      "notVerified": "Please verify your email before logging in.",
+      "forgotPassword": "Forgot password?"
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Fill in the information to join us",
+      "nameLabel": "Full name",
+      "confirmPasswordLabel": "Confirm password",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Login",
+      "success": "Registration successful! Please check your email.",
+      "error": "Registration error. Please check your data.",
+      "passwordMismatch": "Passwords do not match.",
+      "passwordInvalid": "Password must contain at least 9 characters, an uppercase letter, a lowercase letter, a number, and a special character."
+    },
+    "verify": {
+      "title": "Email Verification",
+      "loading": "Verifying...",
+      "success": "Your email has been successfully verified!",
+      "error": "Invalid or expired verification link.",
+      "backToLogin": "Back to login"
+    },
+    "verifyCode": {
+      "title": "Verify your email",
+      "subtitle": "Enter the 6-digit code we sent to {{email}}",
+      "submit": "Verify",
+      "verifying": "Verifying...",
+      "error": "This code is invalid or has expired.",
+      "missingEmail": "No email address to verify. Please register again.",
+      "resend": "Resend code",
+      "resendIn": "Resend code in {{seconds}}s",
+      "resendSuccess": "A new code has been sent.",
+      "resendError": "Something went wrong. Please try again.",
+      "backToRegister": "Back to registration"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email address and we'll send you a link to reset your password",
+      "submit": "Send reset link",
+      "success": "If an account exists for this address, you will receive an email with instructions.",
+      "error": "Something went wrong. Please try again.",
+      "backToLogin": "Back to login"
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "subtitle": "Choose a new password for your account",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "submit": "Reset password",
+      "success": "Your password has been reset successfully!",
+      "error": "This reset link is invalid or has expired.",
+      "passwordMismatch": "Passwords do not match.",
+      "passwordInvalid": "Password must contain at least 9 characters, an uppercase letter, a lowercase letter, a number, and a special character.",
+      "backToLogin": "Back to login"
+    },
+    "common": {
+      "google": "Continue with Google",
+      "or": "Or continue with"
+    }
+  },
+  "home": {
+    "hero": {
+      "title": "Boost your productivity for tomorrow",
+      "subtitle": "An innovative solution designed to simplify your complex processes. Save time and focus on what really matters to your business."
+    },
+    "demoSection": {
+      "title": "Demo Video"
+    },
+    "featuresSection": {
+      "title": "Everything you need",
+      "subtitle": "Our platform offers the tools needed to take your project to the next level.",
+      "items": {
+        "performance": {
+          "title": "Lightning performance",
+          "description": "Optimized for speed and maximum responsiveness on all devices."
+        },
+        "security": {
+          "title": "Enhanced security",
+          "description": "Your data is protected by the most advanced security protocols."
+        },
+        "deployment": {
+          "title": "Quick deployment",
+          "description": "Go from idea to production in just minutes."
+        }
+      }
+    }
+  }
+}

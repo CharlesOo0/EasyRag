@@ -1,0 +1,1 @@
+{% load i18n %}{% translate "Confirmez votre adresse e-mail" %}
