@@ -18,9 +18,9 @@ else
   PYTHON="$VENV_DIR/bin/python"
 fi
 
-echo "Installing backend dependencies..."
+echo "Installing backend dependencies (incl. torch, CPU wheels)..."
 "$PYTHON" -m pip install --upgrade pip
-"$PYTHON" -m pip install -r requirements.txt
+"$PYTHON" -m pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 if [ ! -f ".env" ]; then
   echo "Creating .env from .env.example (fill in real secrets before running)."

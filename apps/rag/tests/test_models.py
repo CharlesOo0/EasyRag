@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 from django.test import TestCase
 
-from .models import Chunk, Document
+from apps.rag.models import Chunk, Document
 
 
 class DocumentModelTests(TestCase):

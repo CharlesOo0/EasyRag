@@ -371,3 +371,19 @@ CSRF_TRUSTED_ORIGINS = (
     if os.getenv('CSRF_TRUSTED_ORIGINS')
     else [FRONTEND_URL]
 )
+
+
+# RAG Configuration
+# All local by default: a local Ollama server for generation and a local
+# sentence-transformers model for embeddings. No external API keys.
+OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+RAG_LLM_MODEL = os.getenv('RAG_LLM_MODEL', 'llama3.1')
+# Must be a 384-dim model - the value is baked into rag.Chunk.embedding
+# (apps/rag/models.py EMBEDDING_DIMENSIONS).
+RAG_EMBEDDING_MODEL = os.getenv('RAG_EMBEDDING_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
+# How many chunks to retrieve per question.
+RAG_TOP_K = int(os.getenv('RAG_TOP_K', 5))
+# Cosine-distance ceiling for a retrieved chunk to be considered relevant
+# (0 = identical, 2 = opposite). Tuned against the real corpus in the
+# retrieval work; left generous for now.
+RAG_SIMILARITY_THRESHOLD = float(os.getenv('RAG_SIMILARITY_THRESHOLD', 0.6))
