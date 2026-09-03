@@ -21,6 +21,8 @@ fi
 echo "Installing backend dependencies..."
 "$PYTHON" -m pip install --upgrade pip
 "$PYTHON" -m pip install -r requirements.txt
+echo "Installing RAG dependencies (sentence-transformers + torch, CPU wheels)..."
+"$PYTHON" -m pip install -r requirements-rag.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 if [ ! -f ".env" ]; then
   echo "Creating .env from .env.example (fill in real secrets before running)."

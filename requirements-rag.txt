@@ -1,0 +1,11 @@
+# Heavier ML stack for the RAG pipeline: local embedding generation used by
+# `manage.py ingest_corpus` and at query time.
+#
+# Kept out of requirements.txt on purpose: the test suite mocks the embedding
+# model, so CI does not need to pull torch. Install this alongside
+# requirements.txt for local dev / Docker / any environment that actually runs
+# ingestion or serves the chat.
+#
+# On Linux, add the CPU-only PyTorch index to avoid the multi-GB CUDA wheels:
+#   pip install -r requirements-rag.txt --extra-index-url https://download.pytorch.org/whl/cpu
+sentence-transformers==6.0.1
