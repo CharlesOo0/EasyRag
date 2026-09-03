@@ -10,6 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEBUG: "True"
+      # Run the suite against real Postgres + pgvector so the vector column,
+      # the CREATE EXTENSION migration and the HNSW index migration are actually
+      # exercised (they no-op on sqlite).
+      DATABASE_URL: "postgres://postgres:postgres@localhost:5432/easyrag"
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: easyrag
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
