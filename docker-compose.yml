@@ -1,6 +1,8 @@
 services:
   db:
-    image: postgres:15-alpine
+    # pgvector image = stock Postgres 16 with the `vector` extension preinstalled,
+    # so `CREATE EXTENSION vector` (see the rag app's migration) just works.
+    image: pgvector/pgvector:pg16
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
@@ -23,6 +25,21 @@ services:
       timeout: 5s
       retries: 5
 
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      # `ollama serve` is the image's entrypoint; `ollama list` hits its local
+      # API and only succeeds once the server is accepting connections.
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   backend:
     build: .
     volumes:
@@ -42,10 +59,13 @@ services:
       - FRONTEND_URL=http://localhost:5173
       - ALLOWED_HOSTS=localhost,127.0.0.1,backend
       - CORS_ALLOWED_ORIGINS=http://localhost:5173
+      - OLLAMA_URL=http://ollama:11434
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ollama:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 8000), timeout=2)"]
@@ -83,3 +103,4 @@ volumes:
   postgres_data:
   redis_data:
   static_volume:
+  ollama_data:

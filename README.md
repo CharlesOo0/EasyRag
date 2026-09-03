@@ -32,11 +32,17 @@ but the RAG chat itself is public.
 ```bash
 cp .env.example .env
 docker compose up --build
+
+# once, in another terminal: pull the generation model into the ollama container
+docker compose exec ollama ollama pull llama3.1
 ```
 
 This starts Postgres+pgvector, Redis, the backend (`:8000`), the frontend
-(`:5173`) and Ollama (`:11434`), pulls the model, and ingests the corpus on first
-boot. Then open http://localhost:5173.
+(`:5173`) and Ollama (`:11434`). Then open http://localhost:5173.
+
+> Auto-pulling the model and ingesting the corpus on first boot lands with the
+> `docker compose up` showcase milestone; for now run the `pull` above and
+> `docker compose exec backend python manage.py ingest_corpus` yourself.
 
 ## Quick start (local)
 
