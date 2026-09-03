@@ -383,6 +383,10 @@ RAG_LLM_MODEL = os.getenv('RAG_LLM_MODEL', 'llama3.1')
 RAG_EMBEDDING_MODEL = os.getenv('RAG_EMBEDDING_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
 # How many chunks to retrieve per question.
 RAG_TOP_K = int(os.getenv('RAG_TOP_K', 5))
+# Chunking: target window and overlap, in (approximate) tokens. The default
+# model's context window is 128 tokens, so keep RAG_CHUNK_TOKENS well under it.
+RAG_CHUNK_TOKENS = int(os.getenv('RAG_CHUNK_TOKENS', 110))
+RAG_CHUNK_OVERLAP = int(os.getenv('RAG_CHUNK_OVERLAP', 20))
 # Cosine-distance ceiling for a retrieved chunk to be considered relevant
 # (0 = identical, 2 = opposite). Tuned against the real corpus in the
 # retrieval work; left generous for now.
