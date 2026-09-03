@@ -1,1 +1,4 @@
 *.sh text eol=lf
+# Corpus files are hashed byte-for-byte by ingest_corpus; keep line endings
+# identical on every platform so the skip-unchanged check is stable.
+corpus/**/*.md text eol=lf
