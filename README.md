@@ -1,110 +1,103 @@
-# Auth Template
+# EasyRag
 
-A full-stack authentication starter: Django REST backend + React Router (v8) frontend.
-Meant to be **forked and adapted** for new projects rather than used as-is.
+A self-contained **RAG showcase**: a fixed corpus of documents, indexed into
+pgvector, queried through a chat UI that answers with citations. Runs fully
+locally — no external API keys — on top of a Django + React Router stack.
 
-## Features
+> Status: early development. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-- Email/password auth with mandatory email verification via a 6-digit OTP code
-- JWT auth delivered as HttpOnly cookies (not exposed to JS), with CSRF protection and automatic refresh-and-retry on 401
-- Google OAuth login (PKCE)
-- Custom user model with role flags (`is_customer`, `is_administrator`) and matching DRF permission classes
-- Password complexity validation
-- Rate limiting on login, registration, and OTP verify/resend
-- i18n (French/English) kept in sync between backend and frontend
-- Docker Compose setup (Postgres + backend + frontend)
+## What it demonstrates
+
+- End-to-end retrieval-augmented generation: ingestion → chunking → embeddings →
+  vector search → prompt assembly → grounded answer with sources.
+- A local-only stack: [Ollama](https://ollama.com) for generation,
+  `sentence-transformers` for embeddings, pgvector for storage.
+- Streaming answers (SSE) with clickable source snippets.
+- Bilingual UI (FR/EN).
+
+The corpus is fixed and ships with the repo (`corpus/`) — there is no user upload.
 
 ## Stack
 
-- **Backend**: Django 6 + Django REST Framework, `dj-rest-auth` + `django-allauth`, `djangorestframework-simplejwt`
-- **Frontend**: React Router v8 (framework mode, SSR-capable), TypeScript, Tailwind v4, shadcn/radix-ui
+- **RAG**: pgvector · `sentence-transformers` (`paraphrase-multilingual-MiniLM-L12-v2`, 384d) · Ollama (`llama3.1`)
+- **Backend**: Django 6 + Django REST Framework
+- **Frontend**: React Router v8 (framework mode), TypeScript, Tailwind v4, shadcn/radix-ui
+- **Infra**: Docker Compose (Postgres+pgvector, Redis, backend, frontend, Ollama)
 
-## Getting started
+An email/password + Google OAuth auth layer is included (from the starter template)
+but the RAG chat itself is public.
+
+## Quick start (Docker)
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+This starts Postgres+pgvector, Redis, the backend (`:8000`), the frontend
+(`:5173`) and Ollama (`:11434`), pulls the model, and ingests the corpus on first
+boot. Then open http://localhost:5173.
+
+## Quick start (local)
+
+Prerequisites: Python 3.12, Node 20+, a Postgres with the `vector` extension
+available, and [Ollama](https://ollama.com) running (`ollama pull llama3.1`).
 
 ### Backend
 
 ```bash
-cp .env.example .env   # then fill in SECRET_KEY, EMAIL_* etc.
+cp .env.example .env            # set DATABASE_URL, OLLAMA_URL if not default
 python -m venv .venv
-.venv\Scripts\activate       # Windows
+.venv\Scripts\activate          # Windows  (source .venv/bin/activate on Unix)
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py runserver   # http://localhost:8000
+python manage.py ingest_corpus  # index corpus/ into pgvector
+python manage.py runserver      # http://localhost:8000
 ```
-
-Other useful commands:
-
-```bash
-python manage.py test                                          # full test suite
-python manage.py test apps.authentication.tests.SomeTestCase.test_x # single test
-python manage.py createsuperuser
-```
-
-#### Scheduled maintenance jobs (production)
-
-Neither of these runs automatically - wire them into your platform's scheduler (cron, a Kubernetes CronJob, Heroku Scheduler, etc.) once deployed:
-
-| Command | Purpose | Suggested schedule |
-|---|---|---|
-| `python manage.py purge_unverified_users --older-than-hours=24` | Deletes accounts that never completed OTP e-mail verification. | Daily |
-| `python manage.py flushexpiredtokens` | Deletes expired rows from `simplejwt`'s outstanding/blacklisted refresh-token tables, which otherwise grow unbounded (see `ROTATE_REFRESH_TOKENS`/`BLACKLIST_AFTER_ROTATION` in `core/settings.py`). | Daily |
 
 ### Frontend
 
 ```bash
 cd front
-cp .env.example .env   # set VITE_API_URL, VITE_GOOGLE_CLIENT_ID
+cp .env.example .env            # set VITE_API_URL
 npm install
-npm run dev        # http://localhost:5173
-npm run typecheck   # react-router typegen + tsc
-npm run build       # production build
+npm run dev                     # http://localhost:5173
 ```
 
-### Docker (full stack)
+## Useful commands
 
 ```bash
-docker-compose up --build
+python manage.py ingest_corpus --reset   # wipe and re-index the corpus
+python manage.py test                    # backend test suite
+cd front && npm run typecheck            # react-router typegen + tsc
 ```
 
-Runs Postgres, backend (`:8000`) and frontend (`:5173`). The compose file hardcodes
-dev-only env vars (`DEBUG=True`, an insecure `SECRET_KEY`) — do not use it as-is in production.
-
-## Environment variables
+## Configuration
 
 Backend (`.env`, see `.env.example`):
 
 | Variable | Purpose |
 |---|---|
-| `SECRET_KEY` | Django secret key. Required when `DEBUG=False`. |
-| `JWT_SIGNING_KEY` | Signing key for JWT access/refresh tokens, kept separate from `SECRET_KEY` so leaking/rotating one doesn't force rotating the other. Required when `DEBUG=False`. |
-| `DEBUG` | Defaults to `False`. Only set `True` locally. |
-| `ALLOWED_HOSTS` | Comma-separated hosts, required in production. |
-| `CORS_ALLOWED_ORIGINS` | Comma-separated origins allowed to call the API. |
-| `CSRF_TRUSTED_ORIGINS` | Comma-separated origins trusted for CSRF-protected requests. Defaults to `FRONTEND_URL`; set explicitly if the frontend is served from more than one origin. |
-| `USE_X_FORWARDED_PROTO` | Set to `True` only if deployed behind a reverse proxy/load balancer that terminates TLS and sets `X-Forwarded-Proto` (and strips any client-supplied copy of that header). Needed so `SECURE_SSL_REDIRECT` doesn't redirect-loop. |
-| `FRONTEND_URL` | Used to build email-confirmation/password-reset redirect links, and as the default `CSRF_TRUSTED_ORIGINS`. |
-| `DATABASE_URL` | Falls back to local sqlite if unset. |
-| `REDIS_URL` | Cache backend, shared by OTP codes and DRF rate-limiting. **Required in any multi-worker/multi-container deployment** - without it, each process gets its own in-memory cache, so OTP verification and throttling both misbehave. Falls back to a local in-memory cache if unset (fine for a single `runserver` process only). |
-| `EMAIL_*` | SMTP settings used to send OTP/verification emails. |
+| `DATABASE_URL` | Postgres connection string. Must point at a DB with pgvector available. Falls back to sqlite (no vector search). |
+| `OLLAMA_URL` | Ollama base URL. Defaults to `http://localhost:11434`. |
+| `RAG_LLM_MODEL` | Ollama model name. Defaults to `llama3.1`. |
+| `RAG_EMBEDDING_MODEL` | sentence-transformers model. Defaults to `paraphrase-multilingual-MiniLM-L12-v2`. |
+| `RAG_TOP_K` | Number of chunks retrieved per query. Defaults to `5`. |
+| `SECRET_KEY`, `JWT_SIGNING_KEY` | Required when `DEBUG=False`. |
+| `REDIS_URL` | Shared cache (OTP codes + rate limiting). Required for multi-worker deployments. |
+| `EMAIL_*` | SMTP settings for the auth layer's verification emails. |
 
-Frontend (`front/.env`, see `front/.env.example`):
+Frontend (`front/.env`):
 
 | Variable | Purpose |
 |---|---|
 | `VITE_API_URL` | Base URL of the backend API. |
-| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID for the login button. |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID (auth layer only). |
 
-## Adapting this template for a new project
+## Architecture
 
-When forking this repo for a new project, check these spots:
-
-- Rename the Django project (`core/`) and update `DJANGO_SETTINGS_MODULE` references if you want a project-specific name instead of `core`.
-- Replace `LANGUAGE_CODE`/`LANGUAGES` in `core/settings.py` and the `front/app/locales/*.json` files with the locales your project actually needs.
-- Review `apps/authentication/models.py` role flags (`is_customer`, `is_administrator`) — extend or replace them to match your project's actual roles.
-- Set a real `SECRET_KEY`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, and SMTP credentials per environment — never reuse the `.env.example` placeholders.
-- Point `VITE_GOOGLE_CLIENT_ID` (and the corresponding Google Cloud OAuth client) at your own project, or remove the Google login button/view if not needed.
-
-See `CLAUDE.md` for a deeper architectural walkthrough (auth flow details, file responsibilities, gotchas).
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the RAG data flow, and
+`CLAUDE.md` (local) for working notes.
 
 ## License
 
