@@ -16,8 +16,6 @@ $python = Join-Path $venvDir "Scripts\python.exe"
 Write-Host "Installing backend dependencies..."
 & $python -m pip install --upgrade pip
 & $python -m pip install -r requirements.txt
-Write-Host "Installing RAG dependencies (sentence-transformers + torch)..."
-& $python -m pip install -r requirements-rag.txt
 
 if (-not (Test-Path ".env")) {
     Write-Host "Creating .env from .env.example (fill in real secrets before running)."

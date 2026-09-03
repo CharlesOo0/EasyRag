@@ -55,16 +55,12 @@ available, and [Ollama](https://ollama.com) running (`ollama pull llama3.1`).
 cp .env.example .env            # set DATABASE_URL, OLLAMA_URL if not default
 python -m venv .venv
 .venv\Scripts\activate          # Windows  (source .venv/bin/activate on Unix)
-pip install -r requirements.txt
-pip install -r requirements-rag.txt   # sentence-transformers + torch; on Linux add
-                                      #   --extra-index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt   # includes torch; on Linux add
+                                  #   --extra-index-url https://download.pytorch.org/whl/cpu
 python manage.py migrate
 python manage.py ingest_corpus  # index corpus/ into pgvector
 python manage.py runserver      # http://localhost:8000
 ```
-
-`requirements.txt` is the lean set the test suite needs; `requirements-rag.txt`
-adds the embedding model stack used by ingestion and live queries.
 
 ### Frontend
 
