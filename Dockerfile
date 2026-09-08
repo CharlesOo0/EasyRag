@@ -2,9 +2,8 @@ FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-# Where sentence-transformers / huggingface_hub cache the embedding model. The
-# model is downloaded into the image below; docker-compose also mounts a named
-# volume here (seeded from the image) so it survives container recreation.
+# The embedding model is downloaded into the image below and lives here - no
+# runtime download, no volume needed.
 ENV HF_HOME=/opt/hf-cache
 
 WORKDIR /app
@@ -25,7 +24,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 # Bake the embedding model into the image so `docker compose up` needs no
 # network and the first request pays no download. Keep the name in sync with
 # RAG_EMBEDDING_MODEL (core/settings.py).
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/multilingual-e5-small')"
 
 # Model is present now, so never hit the HF Hub at runtime - the freshness check
 # alone adds ~20s to the first load.

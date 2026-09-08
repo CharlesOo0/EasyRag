@@ -1,10 +1,9 @@
 from django.db import models
 from pgvector.django import VectorField
 
-# Dimension of the sentence-transformers model used for embeddings
-# (paraphrase-multilingual-MiniLM-L12-v2 -> 384). Kept here because the value is
-# baked into the Chunk.embedding column and its migration; the model name itself
-# is configured via settings (RAG_EMBEDDING_MODEL).
+# Dimension of the embedding model (intfloat/multilingual-e5-small -> 384).
+# Baked into the Chunk.embedding column and its migration; the model name is
+# configured via settings (RAG_EMBEDDING_MODEL) and must stay 384-dim.
 EMBEDDING_DIMENSIONS = 384
 
 

@@ -93,7 +93,7 @@ class Command(BaseCommand):
 
     def _ingest(self, doc: CorpusDocument) -> int:
         segments = chunk_document(doc.body, title=doc.title)
-        vectors = embed_texts([s.content for s in segments]) if segments else []
+        vectors = embed_texts([s.embed_text for s in segments]) if segments else []
         if len(vectors) != len(segments):
             raise CommandError(
                 f"{doc.source_path}: embedded {len(vectors)} of {len(segments)} chunks"

@@ -85,6 +85,11 @@ class ChunkDocumentTests(SimpleTestCase):
         self.assertEqual(chunk_document("", title="Doc"), [])
         self.assertEqual(chunk_document("   \n\n  ", title="Doc"), [])
 
+    def test_embed_text_prefixes_the_heading_path(self):
+        body = "## Geography\nmostly rugged mountains."
+        segment = chunk_document(body, title="Nepal")[0]
+        self.assertEqual(segment.embed_text, "Nepal > Geography\n\nmostly rugged mountains.")
+
 
 class ChunkRealCorpusFileTest(SimpleTestCase):
     def test_a_factbook_file_chunks_cleanly(self):

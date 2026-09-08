@@ -35,6 +35,13 @@ class Segment:
     content: str
     token_count: int
 
+    @property
+    def embed_text(self) -> str:
+        """What to embed: the heading path prefixed to the content. Chunk text
+        often doesn't repeat the document title or section, so without this a
+        chunk carries no signal about which country / section it belongs to."""
+        return f"{self.heading_path}\n\n{self.content}" if self.heading_path else self.content
+
 
 def estimate_tokens(text: str) -> int:
     """Approximate transformer token count without loading a tokenizer.
