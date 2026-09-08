@@ -31,6 +31,10 @@ services:
       - ollama_data:/root/.ollama
     ports:
       - "11434:11434"
+    environment:
+      # Keep the model resident instead of unloading it after 5 min idle - a
+      # reload from disk is ~15-25s on the first request after a pause.
+      - OLLAMA_KEEP_ALIVE=-1
     healthcheck:
       # `ollama serve` is the image's entrypoint; `ollama list` hits its local
       # API and only succeeds once the server is accepting connections.

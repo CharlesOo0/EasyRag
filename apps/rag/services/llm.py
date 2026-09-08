@@ -22,6 +22,16 @@ def _endpoint() -> str:
     return f"{settings.OLLAMA_URL.rstrip('/')}/api/chat"
 
 
+def _keep_alive():
+    """Ollama's `keep_alive`: a bare number is seconds, a string is a duration
+    ('5m') or '-1' for 'never unload'."""
+    raw = str(settings.OLLAMA_KEEP_ALIVE).strip()
+    try:
+        return int(raw)
+    except ValueError:
+        return raw
+
+
 def stream_chat(
     messages: list[dict],
     *,
@@ -33,6 +43,9 @@ def stream_chat(
         "model": model or settings.RAG_LLM_MODEL,
         "messages": messages,
         "stream": True,
+        # Keep the model loaded between requests (also set server-side via
+        # OLLAMA_KEEP_ALIVE); a cold reload is ~15-25s.
+        "keep_alive": _keep_alive(),
     }
     if options:
         payload["options"] = options
