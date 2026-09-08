@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { streamChat } from "./api";
 import type { ChatMessage, ChatTurn } from "./types";
@@ -9,87 +9,126 @@ const newId = () =>
     : `${Date.now()}-${Math.random()}`;
 
 /**
- * Owns the message list and the send/stop lifecycle for one chat session.
- * The assistant message is updated in place as `token` events arrive.
+ * Owns the message list and the send / stop / retry lifecycle for one chat
+ * session. The assistant message is updated in place as `token` events arrive;
+ * how the stream ended is written back once it resolves.
  */
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
+  const messagesRef = useRef(messages);
   const abortRef = useRef<AbortController | null>(null);
 
-  const patchAssistant = useCallback((id: string, patch: Partial<ChatMessage>) => {
-    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
-  }, []);
+  // Keep a synchronous mirror so send()/retry() see the latest list.
+  const commit = useCallback(
+    (updater: (prev: ChatMessage[]) => ChatMessage[]) => {
+      setMessages((prev) => {
+        const next = updater(prev);
+        messagesRef.current = next;
+        return next;
+      });
+    },
+    [],
+  );
 
-  const send = useCallback(
-    async (raw: string) => {
-      const question = raw.trim();
-      if (!question || isStreaming) return;
+  useEffect(() => () => abortRef.current?.abort(), []);
 
-      const history: ChatTurn[] = messages
-        .filter((m) => m.content && !m.error)
+  const run = useCallback(
+    async (question: string, assistantId: string) => {
+      const history: ChatTurn[] = messagesRef.current
+        .filter((m) => m.content && !m.error && !m.stopped)
         .map((m) => ({ role: m.role, content: m.content }));
-
-      const userMessage: ChatMessage = { id: newId(), role: "user", content: question };
-      const assistantId = newId();
-      setMessages((prev) => [
-        ...prev,
-        userMessage,
-        { id: assistantId, role: "assistant", content: "", streaming: true },
-      ]);
-      setIsStreaming(true);
+      // Drop the pending assistant turn we just added from the history.
+      history.pop();
 
       const controller = new AbortController();
       abortRef.current = controller;
+      setIsStreaming(true);
 
       try {
-        await streamChat(
+        const result = await streamChat(
           { question, history },
           {
             signal: controller.signal,
             onEvent: (event) => {
-              switch (event.type) {
-                case "token":
-                  setMessages((prev) =>
-                    prev.map((m) =>
-                      m.id === assistantId ? { ...m, content: m.content + event.text } : m,
-                    ),
-                  );
-                  break;
-                case "sources":
-                  patchAssistant(assistantId, { sources: event.sources });
-                  break;
-                case "error":
-                  patchAssistant(assistantId, { error: event.detail, streaming: false });
-                  break;
-                case "done":
-                  patchAssistant(assistantId, { streaming: false });
-                  break;
+              if (event.type === "token") {
+                commit((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId ? { ...m, content: m.content + event.text } : m,
+                  ),
+                );
+              } else if (event.type === "sources") {
+                commit((prev) =>
+                  prev.map((m) => (m.id === assistantId ? { ...m, sources: event.sources } : m)),
+                );
               }
             },
           },
         );
-      } catch (err) {
-        if (!(err instanceof DOMException && err.name === "AbortError")) {
-          patchAssistant(assistantId, {
-            error: err instanceof Error ? err.message : "Network error",
-            streaming: false,
-          });
-        }
+
+        commit((prev) =>
+          prev.map((m) => {
+            if (m.id !== assistantId) return m;
+            const base = { ...m, streaming: false };
+            switch (result.status) {
+              case "done":
+                return base;
+              case "aborted":
+                return { ...base, stopped: true };
+              case "incomplete":
+                return { ...base, incomplete: true };
+              case "error":
+                return { ...base, error: { kind: result.kind, detail: result.detail } };
+            }
+          }),
+        );
       } finally {
-        patchAssistant(assistantId, { streaming: false });
         setIsStreaming(false);
         abortRef.current = null;
       }
     },
-    [messages, isStreaming, patchAssistant],
+    [commit],
+  );
+
+  const send = useCallback(
+    (raw: string) => {
+      const question = raw.trim();
+      if (!question || isStreaming) return;
+      const assistantId = newId();
+      commit((prev) => [
+        ...prev,
+        { id: newId(), role: "user", content: question },
+        { id: assistantId, role: "assistant", content: "", streaming: true },
+      ]);
+      void run(question, assistantId);
+    },
+    [commit, isStreaming, run],
+  );
+
+  const retry = useCallback(
+    (assistantId: string) => {
+      if (isStreaming) return;
+      const list = messagesRef.current;
+      const index = list.findIndex((m) => m.id === assistantId);
+      if (index < 1 || list[index - 1]?.role !== "user") return;
+      const question = list[index - 1].content;
+
+      const nextAssistantId = newId();
+      commit((prev) => [
+        ...prev.slice(0, index),
+        { id: nextAssistantId, role: "assistant", content: "", streaming: true },
+      ]);
+      void run(question, nextAssistantId);
+    },
+    [commit, isStreaming, run],
   );
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
+
   const reset = useCallback(() => {
     abortRef.current?.abort();
-    setMessages([]);
-  }, []);
+    commit(() => []);
+  }, [commit]);
 
-  return { messages, isStreaming, send, stop, reset };
+  return { messages, isStreaming, send, retry, stop, reset };
 }

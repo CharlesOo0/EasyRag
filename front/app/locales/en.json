@@ -10,8 +10,17 @@
     "send": "Send",
     "stop": "Stop",
     "thinking": "Searching the corpus…",
-    "errorPrefix": "Error:",
     "empty": "Ask a question and the answer will be grounded in the reference corpus, with citations.",
+    "stopped": "— stopped",
+    "incomplete": "The connection dropped before the answer finished.",
+    "emptyResponse": "The model returned nothing.",
+    "retry": "Retry",
+    "error": {
+      "network": "Couldn't reach the server. Check your connection and try again.",
+      "throttled": "Too many requests — wait a moment and try again.",
+      "server": "The server hit an error generating the answer.",
+      "badRequest": "That question couldn't be processed."
+    },
     "sources_one": "{{count}} source",
     "sources_other": "{{count}} sources"
   },

@@ -18,6 +18,10 @@ i18n
       },
     },
     fallbackLng: 'fr',
+    // Resolve region variants (e.g. 'fr-FR') to the base language so SSR and
+    // client agree on <html lang> and only 'fr'/'en' bundles are needed.
+    load: 'languageOnly',
+    supportedLngs: ['fr', 'en'],
     interpolation: {
       escapeValue: false,
     },

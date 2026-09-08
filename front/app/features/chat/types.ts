@@ -10,12 +10,22 @@ export interface ChatSource {
   source_url: string;
 }
 
-/** One decoded Server-Sent Event from POST /api/rag/chat/. */
+/** A decoded Server-Sent Event from POST /api/rag/chat/. `sources` and `token`
+ * are streamed to the caller; `done` / `error` become the stream's result. */
 export type ChatEvent =
   | { type: "sources"; sources: ChatSource[] }
   | { type: "token"; text: string }
   | { type: "done" }
   | { type: "error"; detail: string };
+
+export type StreamErrorKind = "network" | "throttled" | "server" | "bad-request";
+
+/** How a stream ended. */
+export type StreamResult =
+  | { status: "done" }
+  | { status: "aborted" }
+  | { status: "incomplete" } // connection closed before the `done` event
+  | { status: "error"; kind: StreamErrorKind; detail: string };
 
 export interface ChatMessage {
   id: string;
@@ -23,8 +33,12 @@ export interface ChatMessage {
   content: string;
   /** Present on the assistant message once the `sources` event arrives. */
   sources?: ChatSource[];
-  /** Set instead of (or alongside) content when the stream fails. */
-  error?: string;
-  /** True while the assistant message is still being streamed. */
+  /** Set when the stream failed. */
+  error?: { kind: StreamErrorKind; detail: string };
+  /** The user pressed Stop. */
+  stopped?: boolean;
+  /** The connection dropped mid-answer. */
+  incomplete?: boolean;
+  /** True while the assistant message is still streaming. */
   streaming?: boolean;
 }

@@ -10,8 +10,17 @@
     "send": "Envoyer",
     "stop": "Arrêter",
     "thinking": "Recherche dans le corpus…",
-    "errorPrefix": "Erreur :",
     "empty": "Posez une question : la réponse s'appuiera sur le corpus de référence, avec ses sources.",
+    "stopped": "— arrêté",
+    "incomplete": "La connexion a été coupée avant la fin de la réponse.",
+    "emptyResponse": "Le modèle n'a rien renvoyé.",
+    "retry": "Réessayer",
+    "error": {
+      "network": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
+      "throttled": "Trop de requêtes — patientez un instant et réessayez.",
+      "server": "Le serveur a rencontré une erreur pendant la génération.",
+      "badRequest": "Cette question n'a pas pu être traitée."
+    },
     "sources_one": "{{count}} source",
     "sources_other": "{{count}} sources"
   },
