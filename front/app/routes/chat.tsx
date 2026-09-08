@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Languages, Send, Square } from "lucide-react";
 
@@ -17,10 +17,21 @@ export default function ChatRoute() {
   const { messages, isStreaming, send, retry, stop } = useChat();
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autoSent = useRef(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
+
+  // A question passed from the landing page (/chat?q=...) - send it once.
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (!q || autoSent.current) return;
+    autoSent.current = true;
+    send(q);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, send, setSearchParams]);
 
   const submit = () => {
     if (!draft.trim() || isStreaming) return;
