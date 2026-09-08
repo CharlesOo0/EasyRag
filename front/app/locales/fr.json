@@ -83,6 +83,18 @@
       "or": "Ou continuer avec"
     }
   },
+  "chat": {
+    "title": "Interroger le corpus",
+    "back": "Accueil",
+    "placeholder": "Posez une question sur les pays du corpus…",
+    "send": "Envoyer",
+    "stop": "Arrêter",
+    "thinking": "Recherche dans le corpus…",
+    "errorPrefix": "Erreur :",
+    "empty": "Posez une question : la réponse s'appuiera sur le corpus de référence, avec ses sources.",
+    "sources_one": "{{count}} source",
+    "sources_other": "{{count}} sources"
+  },
   "home": {
     "hero": {
       "title": "Boostez votre productivité pour demain",

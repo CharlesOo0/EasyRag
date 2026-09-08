@@ -6,6 +6,7 @@ front/.env
 # React Router
 /.react-router/
 /build/
+/front/build/
 /front/node_modules/
 /.idea/
 /.vscode/
