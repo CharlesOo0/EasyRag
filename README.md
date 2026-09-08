@@ -40,6 +40,10 @@ docker compose exec backend python manage.py ingest_corpus
 Starts Postgres+pgvector, Redis, the backend (`:8000`), the frontend (`:5173`)
 and Ollama (`:11434`). Then open http://localhost:5173/chat.
 
+The backend takes ~30s to become healthy — it loads the embedding model at
+startup so no chat request has to wait for it. Answers then take as long as the
+Ollama model needs to generate (seconds on CPU).
+
 > Auto-pulling the model and ingesting the corpus on first boot lands with the
 > `docker compose up` showcase milestone.
 
