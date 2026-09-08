@@ -387,7 +387,8 @@ RAG_TOP_K = int(os.getenv('RAG_TOP_K', 5))
 # model's context window is 128 tokens, so keep RAG_CHUNK_TOKENS well under it.
 RAG_CHUNK_TOKENS = int(os.getenv('RAG_CHUNK_TOKENS', 110))
 RAG_CHUNK_OVERLAP = int(os.getenv('RAG_CHUNK_OVERLAP', 20))
-# Cosine-distance ceiling for a retrieved chunk to be considered relevant
-# (0 = identical, 2 = opposite). Tuned against the real corpus in the
-# retrieval work; left generous for now.
-RAG_SIMILARITY_THRESHOLD = float(os.getenv('RAG_SIMILARITY_THRESHOLD', 0.6))
+# Minimum cosine similarity (1 - cosine distance; 1 = identical, -1 = opposite)
+# for a retrieved chunk to be kept. Below this it's treated as "not relevant"
+# and dropped before the prompt is built. Deliberately loose - the corpus is
+# short factual text and the generation prompt is told to ignore weak context.
+RAG_SIMILARITY_THRESHOLD = float(os.getenv('RAG_SIMILARITY_THRESHOLD', 0.4))

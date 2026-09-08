@@ -16,7 +16,7 @@ class FakeModel:
         self._dim = dim
         self.encode_calls = []
 
-    def get_sentence_embedding_dimension(self):
+    def get_embedding_dimension(self):
         return self._dim
 
     def encode(self, texts, **kwargs):
