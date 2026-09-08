@@ -1,0 +1,53 @@
+"""Assemble the chat messages sent to the LLM from retrieved context.
+
+Generic: knows nothing about any particular corpus. Produces an Ollama-style
+`[{"role": ..., "content": ...}]` list - a grounding system message, optional
+prior turns, then the user turn carrying numbered context passages and the
+question.
+"""
+
+from __future__ import annotations
+
+from apps.rag.services.retrieval import RetrievedChunk
+
+SYSTEM_PROMPT = (
+    "You answer questions using only a fixed reference corpus.\n"
+    "\n"
+    "Rules:\n"
+    "- Use only the numbered context passages provided with the question. "
+    "Do not rely on outside knowledge.\n"
+    "- After each claim, cite the passages it comes from with their bracketed "
+    "numbers, e.g. [1] or [2][3].\n"
+    "- If the passages do not contain the answer, say so plainly and do not "
+    "guess.\n"
+    "- Answer in the language of the question. Be concise.\n"
+)
+
+_NO_CONTEXT = "(no relevant passages were found)"
+
+
+def format_context(chunks: list[RetrievedChunk]) -> str:
+    if not chunks:
+        return _NO_CONTEXT
+    blocks = []
+    for i, hit in enumerate(chunks, start=1):
+        blocks.append(f"[{i}] {hit.chunk.heading_path}\n{hit.chunk.content}")
+    return "\n\n".join(blocks)
+
+
+def build_messages(
+    question: str,
+    chunks: list[RetrievedChunk],
+    *,
+    history: list[dict] | None = None,
+) -> list[dict]:
+    """Return the chat messages for a single question given its retrieved chunks."""
+    user_turn = (
+        f"Context passages:\n\n{format_context(chunks)}\n\n"
+        f"---\nQuestion: {question.strip()}"
+    )
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        *(history or []),
+        {"role": "user", "content": user_turn},
+    ]
