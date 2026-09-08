@@ -51,7 +51,11 @@ export function MessageBubble({
         }
       >
         <div className="whitespace-pre-wrap">
-          {isUser ? message.content : renderWithCitations(message.content, sources.length, jumpToSource)}
+          {isUser
+            ? message.content
+            : renderWithCitations(message.content, sources.length, jumpToSource, (n) =>
+                t("chat.citation", { n }),
+              )}
           {message.streaming && message.content && (
             <span className="ml-0.5 animate-pulse">▋</span>
           )}
@@ -113,6 +117,7 @@ function renderWithCitations(
   content: string,
   sourceCount: number,
   onJump: (n: number) => void,
+  titleFor: (n: number) => string,
 ): ReactNode {
   const nodes: ReactNode[] = [];
   let cursor = 0;
@@ -130,7 +135,7 @@ function renderWithCitations(
         key={`cite-${key++}`}
         type="button"
         onClick={() => onJump(n)}
-        title={`Source ${n}`}
+        title={titleFor(n)}
         className="mx-0.5 rounded bg-primary/10 px-1 align-baseline text-[0.7rem] font-medium text-primary hover:bg-primary/20"
       >
         {n}
@@ -147,6 +152,7 @@ const SourceCard = forwardRef<
   HTMLDivElement,
   { index: number; source: ChatSource; highlighted: boolean }
 >(({ index, source, highlighted }, ref) => {
+  const { t } = useTranslation();
   const percent = Math.round(source.similarity * 100);
   return (
     <div
@@ -160,7 +166,7 @@ const SourceCard = forwardRef<
         <span className="font-medium text-foreground">
           <span className="text-primary">[{index + 1}]</span> {source.title}
         </span>
-        <span className="shrink-0 text-muted-foreground" title="similarity">
+        <span className="shrink-0 text-muted-foreground" title={t("chat.similarity")}>
           {percent}%
         </span>
       </div>

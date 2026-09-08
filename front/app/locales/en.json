@@ -6,11 +6,20 @@
   "chat": {
     "title": "Ask the corpus",
     "back": "Home",
+    "toggleLanguage": "Switch language",
     "placeholder": "Ask a question about the countries in the corpus…",
     "send": "Send",
     "stop": "Stop",
     "thinking": "Searching the corpus…",
-    "empty": "Ask a question and the answer will be grounded in the reference corpus, with citations.",
+    "intro": "EasyRag answers from a fixed corpus of 195 country profiles (CIA World Factbook), citing its sources. Try one of these:",
+    "examples": [
+      "What language is spoken in Brazil?",
+      "What is the capital of Japan?",
+      "Which countries border Germany?",
+      "What is Norway's climate like?"
+    ],
+    "citation": "Source {{n}}",
+    "similarity": "similarity",
     "stopped": "— stopped",
     "incomplete": "The connection dropped before the answer finished.",
     "emptyResponse": "The model returned nothing.",

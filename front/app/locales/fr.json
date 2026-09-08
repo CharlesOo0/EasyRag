@@ -6,11 +6,20 @@
   "chat": {
     "title": "Interroger le corpus",
     "back": "Accueil",
+    "toggleLanguage": "Changer de langue",
     "placeholder": "Posez une question sur les pays du corpus…",
     "send": "Envoyer",
     "stop": "Arrêter",
     "thinking": "Recherche dans le corpus…",
-    "empty": "Posez une question : la réponse s'appuiera sur le corpus de référence, avec ses sources.",
+    "intro": "EasyRag répond à partir d'un corpus figé de 195 fiches pays (CIA World Factbook), en citant ses sources. Essayez :",
+    "examples": [
+      "Quelle langue parle-t-on au Brésil ?",
+      "Quelle est la capitale du Japon ?",
+      "Quels pays ont une frontière avec l'Allemagne ?",
+      "Quel est le climat de la Norvège ?"
+    ],
+    "citation": "Source {{n}}",
+    "similarity": "similarité",
     "stopped": "— arrêté",
     "incomplete": "La connexion a été coupée avant la fin de la réponse.",
     "emptyResponse": "Le modèle n'a rien renvoyé.",

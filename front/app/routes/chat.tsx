@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft, Languages, Send, Square } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/features/chat/empty-state";
 import { MessageBubble } from "~/features/chat/message";
 import { useChat } from "~/features/chat/hooks";
 
@@ -43,7 +44,7 @@ export default function ChatRoute() {
         <button
           onClick={toggleLanguage}
           className="p-2 rounded-full hover:bg-secondary transition-colors"
-          aria-label="Toggle language"
+          aria-label={t("chat.toggleLanguage")}
         >
           <Languages className="w-4 h-4" />
         </button>
@@ -52,7 +53,7 @@ export default function ChatRoute() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
           {messages.length === 0 ? (
-            <p className="text-center text-muted-foreground pt-20">{t("chat.empty")}</p>
+            <EmptyState onPick={send} />
           ) : (
             messages.map((message) => (
               <MessageBubble
