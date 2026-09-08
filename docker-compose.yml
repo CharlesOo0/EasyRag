@@ -48,6 +48,8 @@ services:
       # subpath, so collectstatic output isn't hidden by the host repo
       # (which has no staticfiles/ dir) when the bind mount is applied.
       - static_volume:/app/staticfiles
+      # Persist the downloaded embedding model across container recreation.
+      - hf_cache:/opt/hf-cache
     ports:
       - "8000:8000"
     environment:
@@ -104,3 +106,4 @@ volumes:
   redis_data:
   static_volume:
   ollama_data:
+  hf_cache:
