@@ -49,8 +49,9 @@ cat <<'EOF'
 Setup complete.
 
 Next steps:
-  1. Fill in real values in .env and front/.env (secrets, email creds, Google client ID).
-  2. Start the backend:   .venv/Scripts/python manage.py runserver   (or .venv/bin/python on macOS/Linux)
-  3. Start the frontend:  cd front && npm run dev
-  4. (optional) Create an admin user: .venv/Scripts/python manage.py createsuperuser
+  1. Fill in real values in .env and front/.env (SECRET_KEY, DATABASE_URL).
+  2. Ingest the corpus:   .venv/bin/python manage.py ingest_corpus
+  3. Start the backend:   .venv/bin/python manage.py runserver   (.venv/Scripts/python on Windows)
+  4. Start the frontend:  cd front && npm run dev
+  5. (optional) Admin user for /admin/: .venv/bin/python manage.py createsuperuser
 EOF
