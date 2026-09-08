@@ -26,7 +26,7 @@ def _get_model():
     from sentence_transformers import SentenceTransformer
 
     model = SentenceTransformer(settings.RAG_EMBEDDING_MODEL)
-    dim = model.get_sentence_embedding_dimension()
+    dim = model.get_embedding_dimension()
     if dim != EMBEDDING_DIMENSIONS:
         raise RuntimeError(
             f"RAG_EMBEDDING_MODEL '{settings.RAG_EMBEDDING_MODEL}' produces "
