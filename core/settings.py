@@ -378,6 +378,10 @@ CSRF_TRUSTED_ORIGINS = (
 # sentence-transformers model for embeddings. No external API keys.
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
 RAG_LLM_MODEL = os.getenv('RAG_LLM_MODEL', 'llama3.1')
+# Ollama HTTP timeouts (seconds): connect is quick; read is the gap between
+# streamed tokens and must tolerate slow CPU inference / a cold model load.
+OLLAMA_CONNECT_TIMEOUT = float(os.getenv('OLLAMA_CONNECT_TIMEOUT', 5))
+OLLAMA_READ_TIMEOUT = float(os.getenv('OLLAMA_READ_TIMEOUT', 120))
 # Must be a 384-dim model - the value is baked into rag.Chunk.embedding
 # (apps/rag/models.py EMBEDDING_DIMENSIONS).
 RAG_EMBEDDING_MODEL = os.getenv('RAG_EMBEDDING_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
