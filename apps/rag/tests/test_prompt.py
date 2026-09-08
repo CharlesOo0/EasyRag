@@ -28,6 +28,20 @@ class FormatContextTests(SimpleTestCase):
     def test_empty_chunks_note(self):
         self.assertEqual(format_context([]), "(no relevant passages were found)")
 
+    def test_context_is_capped_at_the_budget(self):
+        big = [hit(f"Doc {i} > Section", "word " * 400) for i in range(6)]
+        text = format_context(big, budget_chars=1200)
+        # roughly the budget of passage text, not 6 * 2000 chars
+        self.assertLess(len(text), 2000)
+        self.assertIn("[1]", text)
+        self.assertNotIn("[6]", text)
+
+    def test_last_passage_is_truncated_to_fit(self):
+        text = format_context([hit("A > B", "word " * 200)], budget_chars=300)
+        self.assertTrue(text.endswith("…"))
+        self.assertIn("[1] A > B", text)
+        self.assertLess(len(text), 400)
+
 
 class BuildMessagesTests(SimpleTestCase):
     def test_shape(self):

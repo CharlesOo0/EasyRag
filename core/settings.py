@@ -200,6 +200,10 @@ RAG_EMBEDDING_QUERY_PREFIX = os.getenv("RAG_EMBEDDING_QUERY_PREFIX", "query: ")
 RAG_EMBEDDING_PASSAGE_PREFIX = os.getenv("RAG_EMBEDDING_PASSAGE_PREFIX", "passage: ")
 # How many chunks to retrieve per question.
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", 8))
+# Total characters of passage text put in the prompt (retrieval still returns
+# all of RAG_TOP_K - this caps what the LLM has to prefill, which on CPU is the
+# main source of time-to-first-token). ~4500 chars is roughly 1200 tokens.
+RAG_PROMPT_CONTEXT_CHARS = int(os.getenv("RAG_PROMPT_CONTEXT_CHARS", 4500))
 # Chunking: target window and overlap, in (approximate) tokens. e5-small takes
 # 512 tokens, so a whole "## Section" of a country profile fits in one chunk.
 RAG_CHUNK_TOKENS = int(os.getenv("RAG_CHUNK_TOKENS", 350))
