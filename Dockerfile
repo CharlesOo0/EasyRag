@@ -35,4 +35,7 @@ EXPOSE 8000
 # (e.g. a fresh named volume for staticfiles) before dropping to appuser
 # to actually run the server. See entrypoint.sh.
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+# gthread workers + a long timeout: the /api/rag/chat SSE response stays open
+# for the whole (CPU-slow) LLM generation, which the default sync worker with
+# its 30s timeout kills mid-stream.
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--worker-class", "gthread", "--workers", "2", "--threads", "8", "--timeout", "300"]
