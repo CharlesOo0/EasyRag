@@ -70,6 +70,32 @@ class EmbeddingServiceTests(TestCase):
         self.assertTrue(kwargs["normalize_embeddings"])
         self.assertEqual(kwargs["batch_size"], 8)
 
+    @override_settings(
+        RAG_EMBEDDING_QUERY_PREFIX="query: ",
+        RAG_EMBEDDING_PASSAGE_PREFIX="passage: ",
+    )
+    def test_query_and_passage_get_their_prefixes(self):
+        fake = FakeModel()
+        with mock.patch.object(embeddings, "_get_model", return_value=fake):
+            embeddings.embed_query("where is it")
+            embeddings.embed_texts(["a fact", "another"])
+        self.assertEqual(fake.encode_calls[0][0], ["query: where is it"])
+        self.assertEqual(fake.encode_calls[1][0], ["passage: a fact", "passage: another"])
+
+    @override_settings(RAG_EMBEDDING_QUERY_PREFIX="query:")
+    def test_prefix_without_trailing_space_still_separated(self):
+        fake = FakeModel()
+        with mock.patch.object(embeddings, "_get_model", return_value=fake):
+            embeddings.embed_query("hello")
+        self.assertEqual(fake.encode_calls[0][0], ["query: hello"])
+
+    @override_settings(RAG_EMBEDDING_QUERY_PREFIX="", RAG_EMBEDDING_PASSAGE_PREFIX="")
+    def test_empty_prefix_is_a_noop(self):
+        fake = FakeModel()
+        with mock.patch.object(embeddings, "_get_model", return_value=fake):
+            embeddings.embed_query("hello")
+        self.assertEqual(fake.encode_calls[0][0], ["hello"])
+
     def test_model_is_loaded_once_across_calls(self):
         constructor = mock.Mock(return_value=FakeModel())
         with fake_sentence_transformers(constructor):

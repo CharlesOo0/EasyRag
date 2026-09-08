@@ -5,8 +5,9 @@ module is cheap and the test suite can patch `_get_model` without ever pulling
 model weights. `sentence_transformers` itself is imported inside `_get_model`
 for the same reason - it is not a test dependency.
 
-All vectors are L2-normalised, so a dot product is the cosine similarity and
-pgvector's cosine distance behaves as expected downstream.
+Passages and queries are embedded through different entry points because e5-style
+models expect them prefixed differently (`passage: ` vs `query: `). All vectors
+are L2-normalised, so pgvector's cosine distance behaves as expected downstream.
 """
 
 from __future__ import annotations
@@ -42,17 +43,18 @@ def reset_model_cache() -> None:
     _get_model.cache_clear()
 
 
-def embed_texts(
-    texts: list[str],
-    *,
-    batch_size: int = DEFAULT_BATCH_SIZE,
-) -> list[list[float]]:
-    """Embed a list of texts. Returns one normalised vector per input."""
-    texts = list(texts)
+def _apply_prefix(prefix: str, text: str) -> str:
+    prefix = prefix or ""
+    sep = "" if not prefix or prefix.endswith(" ") else " "
+    return f"{prefix}{sep}{text}"
+
+
+def _encode(texts: list[str], prefix: str, batch_size: int) -> list[list[float]]:
     if not texts:
         return []
+    prefixed = [_apply_prefix(prefix, text) for text in texts]
     vectors = _get_model().encode(
-        texts,
+        prefixed,
         batch_size=batch_size,
         normalize_embeddings=True,
         convert_to_numpy=True,
@@ -61,6 +63,15 @@ def embed_texts(
     return [vector.tolist() for vector in vectors]
 
 
+def embed_texts(
+    texts: list[str],
+    *,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+) -> list[list[float]]:
+    """Embed corpus passages (used by ingestion). One normalised vector per input."""
+    return _encode(list(texts), settings.RAG_EMBEDDING_PASSAGE_PREFIX, batch_size)
+
+
 def embed_query(text: str) -> list[float]:
-    """Embed a single query string."""
-    return embed_texts([text])[0]
+    """Embed a single search query."""
+    return _encode([text], settings.RAG_EMBEDDING_QUERY_PREFIX, DEFAULT_BATCH_SIZE)[0]

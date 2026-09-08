@@ -193,18 +193,20 @@ RAG_LLM_MODEL = os.getenv("RAG_LLM_MODEL", "llama3.2:3b")
 OLLAMA_CONNECT_TIMEOUT = float(os.getenv("OLLAMA_CONNECT_TIMEOUT", 5))
 OLLAMA_READ_TIMEOUT = float(os.getenv("OLLAMA_READ_TIMEOUT", 120))
 # Must be a 384-dim model - the value is baked into rag.Chunk.embedding
-# (apps/rag/models.py EMBEDDING_DIMENSIONS).
-RAG_EMBEDDING_MODEL = os.getenv(
-    "RAG_EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2"
-)
+# (apps/rag/models.py EMBEDDING_DIMENSIONS). e5 models want their inputs
+# prefixed ("query: " / "passage: "); the embedding service applies these.
+RAG_EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
+RAG_EMBEDDING_QUERY_PREFIX = os.getenv("RAG_EMBEDDING_QUERY_PREFIX", "query: ")
+RAG_EMBEDDING_PASSAGE_PREFIX = os.getenv("RAG_EMBEDDING_PASSAGE_PREFIX", "passage: ")
 # How many chunks to retrieve per question.
-RAG_TOP_K = int(os.getenv("RAG_TOP_K", 5))
-# Chunking: target window and overlap, in (approximate) tokens. The default
-# model's context window is 128 tokens, so keep RAG_CHUNK_TOKENS well under it.
-RAG_CHUNK_TOKENS = int(os.getenv("RAG_CHUNK_TOKENS", 110))
-RAG_CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", 20))
-# Minimum cosine similarity (1 - cosine distance; 1 = identical, -1 = opposite)
-# for a retrieved chunk to be kept. Below this it's dropped before the prompt is
-# built. Deliberately loose - the corpus is short factual text and the prompt is
-# told to ignore weak context.
-RAG_SIMILARITY_THRESHOLD = float(os.getenv("RAG_SIMILARITY_THRESHOLD", 0.4))
+RAG_TOP_K = int(os.getenv("RAG_TOP_K", 8))
+# Chunking: target window and overlap, in (approximate) tokens. e5-small takes
+# 512 tokens, so a whole "## Section" of a country profile fits in one chunk.
+RAG_CHUNK_TOKENS = int(os.getenv("RAG_CHUNK_TOKENS", 350))
+RAG_CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", 64))
+# Minimum cosine similarity for a retrieved chunk to be kept. e5 similarities sit
+# in a narrow high band (~0.80-0.86 for good hits, ~0.82 even for nonsense), so
+# this can only be a floor that drops the truly unrelated - real precision would
+# need hybrid (keyword + vector) search. The generation prompt does the rest by
+# ignoring weak context.
+RAG_SIMILARITY_THRESHOLD = float(os.getenv("RAG_SIMILARITY_THRESHOLD", 0.72))
