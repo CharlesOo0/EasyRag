@@ -2,7 +2,7 @@
 
 A self-contained **RAG showcase**: a fixed corpus of documents, indexed into
 pgvector, queried through a chat UI that answers with citations. Runs fully
-locally — no external API keys — on top of a Django + React Router stack.
+locally — no external API keys, no login.
 
 > Status: early development. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -12,20 +12,19 @@ locally — no external API keys — on top of a Django + React Router stack.
   vector search → prompt assembly → grounded answer with sources.
 - A local-only stack: [Ollama](https://ollama.com) for generation,
   `sentence-transformers` for embeddings, pgvector for storage.
-- Streaming answers (SSE) with clickable source snippets.
+- Streaming answers (SSE) with source snippets.
 - Bilingual UI (FR/EN).
 
-The corpus is fixed and ships with the repo (`corpus/`) — there is no user upload.
+The corpus is fixed and ships with the repo (`corpus/` — 195 country profiles
+from the CIA World Factbook, public domain). There is no user upload and no
+account: the chat endpoint is open.
 
 ## Stack
 
-- **RAG**: pgvector · `sentence-transformers` (`paraphrase-multilingual-MiniLM-L12-v2`, 384d) · Ollama (`llama3.1`)
+- **RAG**: pgvector · `sentence-transformers` (`paraphrase-multilingual-MiniLM-L12-v2`, 384d) · Ollama (`llama3.2:3b`)
 - **Backend**: Django 6 + Django REST Framework
 - **Frontend**: React Router v8 (framework mode), TypeScript, Tailwind v4, shadcn/radix-ui
 - **Infra**: Docker Compose (Postgres+pgvector, Redis, backend, frontend, Ollama)
-
-An email/password + Google OAuth auth layer is included (from the starter template)
-but the RAG chat itself is public.
 
 ## Quick start (Docker)
 
@@ -33,21 +32,21 @@ but the RAG chat itself is public.
 cp .env.example .env
 docker compose up --build
 
-# once, in another terminal: pull the generation model into the ollama container
-docker compose exec ollama ollama pull llama3.1
+# once, in another terminal:
+docker compose exec ollama ollama pull llama3.2:3b
+docker compose exec backend python manage.py ingest_corpus
 ```
 
-This starts Postgres+pgvector, Redis, the backend (`:8000`), the frontend
-(`:5173`) and Ollama (`:11434`). Then open http://localhost:5173.
+Starts Postgres+pgvector, Redis, the backend (`:8000`), the frontend (`:5173`)
+and Ollama (`:11434`). Then open http://localhost:5173/chat.
 
 > Auto-pulling the model and ingesting the corpus on first boot lands with the
-> `docker compose up` showcase milestone; for now run the `pull` above and
-> `docker compose exec backend python manage.py ingest_corpus` yourself.
+> `docker compose up` showcase milestone.
 
 ## Quick start (local)
 
 Prerequisites: Python 3.12, Node 20+, a Postgres with the `vector` extension
-available, and [Ollama](https://ollama.com) running (`ollama pull llama3.1`).
+available, and [Ollama](https://ollama.com) running (`ollama pull llama3.2:3b`).
 
 ### Backend
 
@@ -76,6 +75,7 @@ npm run dev                     # http://localhost:5173
 ```bash
 python manage.py ingest_corpus --reset   # wipe and re-index the corpus
 python manage.py test                    # backend test suite
+python manage.py createsuperuser         # for /admin/ (inspect Document / Chunk)
 cd front && npm run typecheck            # react-router typegen + tsc
 ```
 
@@ -85,26 +85,27 @@ Backend (`.env`, see `.env.example`):
 
 | Variable | Purpose |
 |---|---|
-| `DATABASE_URL` | Postgres connection string. Must point at a DB with pgvector available. Falls back to sqlite (no vector search). |
+| `SECRET_KEY` | Required when `DEBUG=False`. |
+| `DEBUG` | `True` for local dev; defaults to `False`. |
+| `ALLOWED_HOSTS` | Comma-separated, required when `DEBUG=False`. |
+| `DATABASE_URL` | Postgres connection string; the DB must have pgvector available. Falls back to sqlite (no vector search). |
+| `REDIS_URL` | Shared cache for request throttling. Falls back to in-memory (single process only). |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated origins allowed to call the API. |
 | `OLLAMA_URL` | Ollama base URL. Defaults to `http://localhost:11434`. |
-| `RAG_LLM_MODEL` | Ollama model name. Defaults to `llama3.1`. |
-| `RAG_EMBEDDING_MODEL` | sentence-transformers model. Defaults to `paraphrase-multilingual-MiniLM-L12-v2`. |
-| `RAG_TOP_K` | Number of chunks retrieved per query. Defaults to `5`. |
-| `SECRET_KEY`, `JWT_SIGNING_KEY` | Required when `DEBUG=False`. |
-| `REDIS_URL` | Shared cache (OTP codes + rate limiting). Required for multi-worker deployments. |
-| `EMAIL_*` | SMTP settings for the auth layer's verification emails. |
+| `RAG_LLM_MODEL` | Ollama model. Defaults to `llama3.2:3b`. |
+| `RAG_EMBEDDING_MODEL` | sentence-transformers model (must be 384-dim). |
+| `RAG_TOP_K`, `RAG_SIMILARITY_THRESHOLD`, `RAG_CHUNK_TOKENS`, `RAG_CHUNK_OVERLAP` | Retrieval / chunking knobs. |
 
 Frontend (`front/.env`):
 
 | Variable | Purpose |
 |---|---|
 | `VITE_API_URL` | Base URL of the backend API. |
-| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client ID (auth layer only). |
 
 ## Architecture
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the RAG data flow, and
-`CLAUDE.md` (local) for working notes.
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the RAG data flow and
+[`docs/corpus-format.md`](docs/corpus-format.md) for the ingestion format.
 
 ## License
 
