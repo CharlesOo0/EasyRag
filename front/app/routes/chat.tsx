@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Languages, Send, Square } from "lucide-react";
+import { ArrowLeft, Languages, RotateCcw, Send, Square } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { useChat } from "~/features/chat/hooks";
-import type { ChatMessage } from "~/features/chat/types";
+import type { ChatMessage, StreamErrorKind } from "~/features/chat/types";
 
 export function meta() {
   return [{ title: "EasyRag — Chat" }];
@@ -13,7 +13,7 @@ export function meta() {
 
 export default function ChatRoute() {
   const { t, i18n } = useTranslation();
-  const { messages, isStreaming, send, stop } = useChat();
+  const { messages, isStreaming, send, retry, stop } = useChat();
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +32,10 @@ export default function ChatRoute() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground font-sans">
       <header className="flex items-center justify-between border-b px-4 h-14 shrink-0">
-        <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="w-4 h-4" />
           {t("chat.back")}
         </Link>
@@ -51,7 +54,14 @@ export default function ChatRoute() {
           {messages.length === 0 ? (
             <p className="text-center text-muted-foreground pt-20">{t("chat.empty")}</p>
           ) : (
-            messages.map((message) => <MessageBubble key={message.id} message={message} />)
+            messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                onRetry={() => retry(message.id)}
+                canRetry={!isStreaming}
+              />
+            ))
           )}
         </div>
       </div>
@@ -94,9 +104,21 @@ export default function ChatRoute() {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({
+  message,
+  onRetry,
+  canRetry,
+}: {
+  message: ChatMessage;
+  onRetry: () => void;
+  canRetry: boolean;
+}) {
   const { t } = useTranslation();
   const isUser = message.role === "user";
+  const isEmptyDone =
+    !isUser && !message.streaming && !message.content && !message.error && !message.stopped;
+  const showRetry =
+    !isUser && canRetry && (message.error || message.incomplete || message.stopped || isEmptyDone);
 
   return (
     <div className={isUser ? "flex justify-end" : "flex justify-start"}>
@@ -107,15 +129,36 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         }
       >
         {message.content}
-        {message.streaming && <span className="ml-0.5 animate-pulse">▋</span>}
+        {message.streaming && message.content && (
+          <span className="ml-0.5 animate-pulse">▋</span>
+        )}
         {message.streaming && !message.content && (
           <span className="text-muted-foreground">{t("chat.thinking")}</span>
         )}
-        {message.error && (
-          <p className="mt-1 text-destructive text-xs">
-            {t("chat.errorPrefix")} {message.error}
-          </p>
+
+        {message.stopped && (
+          <span className="ml-1 text-muted-foreground text-xs">{t("chat.stopped")}</span>
         )}
+        {message.incomplete && (
+          <p className="mt-1 text-muted-foreground text-xs">{t("chat.incomplete")}</p>
+        )}
+        {isEmptyDone && (
+          <span className="text-muted-foreground">{t("chat.emptyResponse")}</span>
+        )}
+        {message.error && (
+          <p className="mt-1 text-destructive text-xs">{t(errorKey(message.error.kind))}</p>
+        )}
+
+        {showRetry && (
+          <button
+            onClick={onRetry}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <RotateCcw className="w-3 h-3" />
+            {t("chat.retry")}
+          </button>
+        )}
+
         {message.sources && message.sources.length > 0 && (
           <details className="mt-2 text-xs text-muted-foreground">
             <summary className="cursor-pointer select-none">
@@ -133,4 +176,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       </div>
     </div>
   );
+}
+
+function errorKey(kind: StreamErrorKind): string {
+  return {
+    network: "chat.error.network",
+    throttled: "chat.error.throttled",
+    server: "chat.error.server",
+    "bad-request": "chat.error.badRequest",
+  }[kind];
 }
