@@ -292,6 +292,8 @@ REST_FRAMEWORK = {
         # user details) default to this scope - give it a looser rate so
         # enabling ScopedRateThrottle globally doesn't break them.
         'dj_rest_auth': '20/min',
+        # Public RAG chat endpoint (apps/rag/views.py).
+        'rag_chat': '20/min',
     },
 }
 
@@ -377,7 +379,7 @@ CSRF_TRUSTED_ORIGINS = (
 # All local by default: a local Ollama server for generation and a local
 # sentence-transformers model for embeddings. No external API keys.
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
-RAG_LLM_MODEL = os.getenv('RAG_LLM_MODEL', 'llama3.1')
+RAG_LLM_MODEL = os.getenv('RAG_LLM_MODEL', 'llama3.2:3b')
 # Ollama HTTP timeouts (seconds): connect is quick; read is the gap between
 # streamed tokens and must tolerate slow CPU inference / a cold model load.
 OLLAMA_CONNECT_TIMEOUT = float(os.getenv('OLLAMA_CONNECT_TIMEOUT', 5))
