@@ -8,6 +8,8 @@ question.
 
 from __future__ import annotations
 
+from django.conf import settings
+
 from apps.rag.services.retrieval import RetrievedChunk
 
 SYSTEM_PROMPT = (
@@ -24,14 +26,30 @@ SYSTEM_PROMPT = (
 )
 
 _NO_CONTEXT = "(no relevant passages were found)"
+# Below this a truncated passage isn't worth including at all.
+_MIN_PASSAGE_CHARS = 200
 
 
-def format_context(chunks: list[RetrievedChunk]) -> str:
+def format_context(chunks: list[RetrievedChunk], *, budget_chars: int | None = None) -> str:
+    """Numbered passages, capped at `budget_chars` total (chunk text only) so a
+    CPU model isn't stuck prefilling thousands of tokens of context. Retrieval
+    still returns every chunk - this only trims what the LLM sees."""
     if not chunks:
         return _NO_CONTEXT
+    if budget_chars is None:
+        budget_chars = int(getattr(settings, "RAG_PROMPT_CONTEXT_CHARS", 4500))
+
     blocks = []
+    used = 0
     for i, hit in enumerate(chunks, start=1):
-        blocks.append(f"[{i}] {hit.chunk.heading_path}\n{hit.chunk.content}")
+        remaining = budget_chars - used
+        if remaining < _MIN_PASSAGE_CHARS:
+            break
+        content = hit.chunk.content
+        if len(content) > remaining:
+            content = content[:remaining].rsplit(" ", 1)[0] + " …"
+        used += len(content)
+        blocks.append(f"[{i}] {hit.chunk.heading_path}\n{content}")
     return "\n\n".join(blocks)
 
 

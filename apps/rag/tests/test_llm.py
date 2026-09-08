@@ -40,7 +40,15 @@ class StreamChatTests(SimpleTestCase):
         body = post.call_args.kwargs["json"]
         self.assertEqual(body["model"], "llama3.1")
         self.assertTrue(body["stream"])
+        self.assertEqual(body["keep_alive"], -1)
         self.assertTrue(resp.closed)
+
+    @override_settings(OLLAMA_KEEP_ALIVE="10m")
+    def test_keep_alive_duration_string_is_passed_through(self):
+        resp = FakeResponse(lines=frames("x"))
+        with mock.patch.object(llm.requests, "post", return_value=resp) as post:
+            list(llm.stream_chat([]))
+        self.assertEqual(post.call_args.kwargs["json"]["keep_alive"], "10m")
 
     def test_stops_at_done_frame(self):
         lines = [json.dumps({"message": {"content": "one"}, "done": False}),

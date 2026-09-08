@@ -192,6 +192,9 @@ RAG_LLM_MODEL = os.getenv("RAG_LLM_MODEL", "llama3.2:3b")
 # streamed tokens and must tolerate slow CPU inference / a cold model load.
 OLLAMA_CONNECT_TIMEOUT = float(os.getenv("OLLAMA_CONNECT_TIMEOUT", 5))
 OLLAMA_READ_TIMEOUT = float(os.getenv("OLLAMA_READ_TIMEOUT", 120))
+# How long Ollama keeps the model in memory after a request. "-1" = forever
+# (no cold reload between questions); "5m" is Ollama's default.
+OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "-1")
 # Must be a 384-dim model - the value is baked into rag.Chunk.embedding
 # (apps/rag/models.py EMBEDDING_DIMENSIONS). e5 models want their inputs
 # prefixed ("query: " / "passage: "); the embedding service applies these.
@@ -200,6 +203,11 @@ RAG_EMBEDDING_QUERY_PREFIX = os.getenv("RAG_EMBEDDING_QUERY_PREFIX", "query: ")
 RAG_EMBEDDING_PASSAGE_PREFIX = os.getenv("RAG_EMBEDDING_PASSAGE_PREFIX", "passage: ")
 # How many chunks to retrieve per question.
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", 8))
+# Total characters of passage text put in the prompt (retrieval still returns
+# all of RAG_TOP_K for the source cards - this only caps what the LLM has to
+# prefill, which on CPU is the main driver of time-to-first-token: ~2800 chars
+# is roughly 750 tokens, ~12s on the default model).
+RAG_PROMPT_CONTEXT_CHARS = int(os.getenv("RAG_PROMPT_CONTEXT_CHARS", 2800))
 # Chunking: target window and overlap, in (approximate) tokens. e5-small takes
 # 512 tokens, so a whole "## Section" of a country profile fits in one chunk.
 RAG_CHUNK_TOKENS = int(os.getenv("RAG_CHUNK_TOKENS", 350))
