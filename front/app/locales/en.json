@@ -83,6 +83,18 @@
       "or": "Or continue with"
     }
   },
+  "chat": {
+    "title": "Ask the corpus",
+    "back": "Home",
+    "placeholder": "Ask a question about the countries in the corpus…",
+    "send": "Send",
+    "stop": "Stop",
+    "thinking": "Searching the corpus…",
+    "errorPrefix": "Error:",
+    "empty": "Ask a question and the answer will be grounded in the reference corpus, with citations.",
+    "sources_one": "{{count}} source",
+    "sources_other": "{{count}} sources"
+  },
   "home": {
     "hero": {
       "title": "Boost your productivity for tomorrow",
