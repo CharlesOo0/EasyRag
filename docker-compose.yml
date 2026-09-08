@@ -1,3 +1,14 @@
+# Env shared by the backend server and the one-shot bootstrap job.
+x-backend-env: &backend-env
+  DEBUG: "True"
+  SECRET_KEY: django-insecure-dev-key
+  DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-postgres}
+  REDIS_URL: redis://redis:6379/1
+  ALLOWED_HOSTS: localhost,127.0.0.1,backend
+  CORS_ALLOWED_ORIGINS: http://localhost:5173
+  OLLAMA_URL: http://ollama:11434
+  RAG_LLM_MODEL: llama3.2:3b
+
 services:
   db:
     # pgvector image = stock Postgres 16 with the `vector` extension preinstalled,
@@ -44,6 +55,21 @@ services:
       retries: 5
       start_period: 30s
 
+  # One-shot: migrate, pull the Ollama model, ingest the corpus. Idempotent, so
+  # it's cheap on restarts. First boot takes a while (model download + ingest) -
+  # watch it with `docker compose logs -f bootstrap`.
+  bootstrap:
+    build: .
+    entrypoint: ["/bin/sh", "/app/scripts/bootstrap.sh"]
+    volumes:
+      - .:/app
+    environment: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+
   backend:
     build: .
     volumes:
@@ -54,20 +80,11 @@ services:
       - static_volume:/app/staticfiles
     ports:
       - "8000:8000"
-    environment:
-      - DEBUG=True
-      - SECRET_KEY=django-insecure-dev-key
-      - DATABASE_URL=postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-postgres}
-      - REDIS_URL=redis://redis:6379/1
-      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
-      - CORS_ALLOWED_ORIGINS=http://localhost:5173
-      - OLLAMA_URL=http://ollama:11434
+    environment: *backend-env
     depends_on:
-      db:
-        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
       redis:
-        condition: service_healthy
-      ollama:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 8000), timeout=2)"]

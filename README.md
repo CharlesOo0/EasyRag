@@ -31,21 +31,22 @@ account: the chat endpoint is open.
 ```bash
 cp .env.example .env
 docker compose up --build
-
-# once, in another terminal:
-docker compose exec ollama ollama pull llama3.2:3b
-docker compose exec backend python manage.py ingest_corpus
 ```
 
-Starts Postgres+pgvector, Redis, the backend (`:8000`), the frontend (`:5173`)
-and Ollama (`:11434`). Then open http://localhost:5173/chat.
+Starts Postgres+pgvector, Redis, Ollama (`:11434`), the backend (`:8000`) and
+the frontend (`:5173`). A one-shot `bootstrap` service migrates the DB, pulls
+the generation model and ingests the corpus before the backend comes up:
 
-The backend takes ~30s to become healthy — it loads the embedding model at
-startup so no chat request has to wait for it. Answers then take as long as the
-Ollama model needs to generate (seconds on CPU).
+```bash
+docker compose logs -f bootstrap    # follow first-boot progress
+```
 
-> Auto-pulling the model and ingesting the corpus on first boot lands with the
-> `docker compose up` showcase milestone.
+**First boot takes ~10 min** (a ~2 GB model download + embedding ~6k passages).
+After that it's cached — restarts are seconds. Then open
+http://localhost:5173/chat.
+
+The backend loads the embedding model at startup so no chat request waits for
+it; answers take as long as the Ollama model needs to generate (~10 s on CPU).
 
 ## Quick start (local)
 
