@@ -107,10 +107,12 @@ Frontend (`front/.env`):
 |---|---|
 | `VITE_API_URL` | Base URL of the backend API. |
 
-## Architecture
+## Docs
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the RAG data flow and
-[`docs/corpus-format.md`](docs/corpus-format.md) for the ingestion format.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the RAG data flow, key files, settings.
+- [`docs/corpus-format.md`](docs/corpus-format.md) — the ingestion format (swapping corpora).
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — running it somewhere real.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — milestones.
 
 ## License
 
