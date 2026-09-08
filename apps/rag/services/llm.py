@@ -45,8 +45,12 @@ def stream_chat(
 
     try:
         if response.status_code != 200:
-            detail = response.text.strip()[:300] or f"HTTP {response.status_code}"
-            raise OllamaError(f"Ollama error: {detail}")
+            detail = response.text.strip()
+            try:
+                detail = json.loads(detail).get("error") or detail
+            except (json.JSONDecodeError, AttributeError):
+                pass
+            raise OllamaError(f"Ollama error: {detail[:300] or f'HTTP {response.status_code}'}")
 
         for line in response.iter_lines(decode_unicode=True):
             if not line:

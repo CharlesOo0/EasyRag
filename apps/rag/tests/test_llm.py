@@ -64,12 +64,19 @@ class StreamChatTests(SimpleTestCase):
         self.assertIn("cannot reach Ollama", str(ctx.exception))
 
     def test_non_200_raises_with_body(self):
-        resp = FakeResponse(status_code=404, text="model 'llama3.1' not found")
+        resp = FakeResponse(status_code=500, text="internal error")
         with mock.patch.object(llm.requests, "post", return_value=resp):
             with self.assertRaises(llm.OllamaError) as ctx:
                 list(llm.stream_chat([]))
-        self.assertIn("not found", str(ctx.exception))
+        self.assertIn("internal error", str(ctx.exception))
         self.assertTrue(resp.closed)
+
+    def test_non_200_json_body_surfaces_only_the_error_message(self):
+        resp = FakeResponse(status_code=404, text='{"error":"model \'llama3.1\' not found"}')
+        with mock.patch.object(llm.requests, "post", return_value=resp):
+            with self.assertRaises(llm.OllamaError) as ctx:
+                list(llm.stream_chat([]))
+        self.assertEqual(str(ctx.exception), "Ollama error: model 'llama3.1' not found")
 
     def test_error_frame_in_stream_raises(self):
         lines = [json.dumps({"message": {"content": "partial"}, "done": False}),
