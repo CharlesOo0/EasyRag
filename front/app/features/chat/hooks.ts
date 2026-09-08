@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { streamChat } from "./api";
 import type { ChatMessage, ChatTurn } from "./types";
@@ -31,7 +31,10 @@ export function useChat() {
     [],
   );
 
-  useEffect(() => () => abortRef.current?.abort(), []);
+  // No abort-on-unmount: it fights React's StrictMode remount and would kill a
+  // stream a mount effect just kicked off (/chat?q=... auto-send). A stream left
+  // running after navigation finishes on its own; `stop()` covers explicit
+  // cancellation while on the page.
 
   const run = useCallback(
     async (question: string, assistantId: string) => {

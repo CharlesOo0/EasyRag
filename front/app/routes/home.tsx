@@ -1,158 +1,195 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { ArrowRight, CheckCircle, Github, Languages, Play, Rocket, Shield, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import {
+  ArrowRight,
+  Database,
+  Github,
+  Languages,
+  Layers,
+  MessageSquareQuote,
+  Rocket,
+  Search,
+  Sparkles,
+} from "lucide-react";
 
-import demoVideo from "../assets/demo.mp4";
+export function meta() {
+  return [{ title: "EasyRag" }];
+}
 
-/**
- * Placeholder landing page. The real EasyRag landing is #24.
- */
 export default function Home() {
   const { t, i18n } = useTranslation();
+  const toggleLanguage = () => i18n.changeLanguage(i18n.language === "fr" ? "en" : "fr");
 
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === "fr" ? "en" : "fr");
-  };
+  const steps: { icon: ReactNode; key: string }[] = [
+    { icon: <Layers className="w-5 h-5" />, key: "ingest" },
+    { icon: <Sparkles className="w-5 h-5" />, key: "embed" },
+    { icon: <Search className="w-5 h-5" />, key: "retrieve" },
+    { icon: <MessageSquareQuote className="w-5 h-5" />, key: "generate" },
+  ];
 
-  const features = [
-    { icon: <Zap className="w-6 h-6 text-primary" />, key: "performance" },
-    { icon: <Shield className="w-6 h-6 text-primary" />, key: "security" },
-    { icon: <CheckCircle className="w-6 h-6 text-primary" />, key: "deployment" },
-  ] as const;
+  const stack: { icon: ReactNode; key: string }[] = [
+    { icon: <Database className="w-5 h-5 text-primary" />, key: "store" },
+    { icon: <Sparkles className="w-5 h-5 text-primary" />, key: "embed" },
+    { icon: <MessageSquareQuote className="w-5 h-5 text-primary" />, key: "llm" },
+  ];
+
+  const examples = asArray(t("home.tryIt.examples", { returnObjects: true }));
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-background text-foreground font-sans">
-      <nav className="fixed top-0 w-full z-50 border-b bg-background/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Rocket className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">EasyRag</span>
+    <div className="min-h-screen flex flex-col bg-background text-foreground font-sans">
+      <nav className="border-b">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+          <span className="flex items-center gap-2 font-bold text-lg">
+            <span className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
+              <Rocket className="w-4 h-4 text-primary-foreground" />
+            </span>
+            EasyRag
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleLanguage}
+              className="p-2 rounded-full hover:bg-secondary transition-colors"
+              aria-label={t("home.toggleLanguage")}
+            >
+              <Languages className="w-4 h-4" />
+            </button>
+            <Link
+              to="/chat"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              {t("home.openChat")}
+              <ArrowRight className="w-4 h-4" />
             </Link>
-
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleLanguage}
-                className="p-2 rounded-full hover:bg-secondary transition-colors"
-                aria-label="Toggle language"
-              >
-                <Languages className="w-5 h-5" />
-              </button>
-              <Link
-                to="/chat"
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-              >
-                {t("common.getStarted")}
-              </Link>
-            </div>
           </div>
         </div>
       </nav>
 
-      <main className="flex-1 pt-16">
-        <section className="relative overflow-hidden py-24 lg:py-32">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl mb-6">
-              {t("home.hero.title")}
-            </h1>
-            <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-10">
-              {t("home.hero.subtitle")}
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link
-                to="/chat"
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-base font-medium text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:scale-105"
-              >
-                {t("common.getStarted")}
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-              <a
-                href="#demo"
-                className="inline-flex items-center justify-center rounded-lg border bg-background px-8 py-3 text-base font-medium shadow-sm transition-all hover:bg-accent hover:text-accent-foreground"
-              >
-                <Play className="mr-2 w-4 h-4 fill-current" />
-                {t("common.demo")}
-              </a>
-            </div>
-          </div>
-
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
+      <main className="flex-1">
+        {/* Hero */}
+        <section className="max-w-5xl mx-auto px-4 py-20 text-center">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+            {t("home.hero.title")}
+          </h1>
+          <p className="max-w-xl mx-auto text-lg text-muted-foreground mb-8">
+            {t("home.hero.subtitle")}
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
+            <Link
+              to="/chat"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              {t("home.openChat")}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a
+              href="https://github.com/CharlesOo0/EasyRag"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border px-6 py-3 font-medium hover:bg-muted transition-colors"
+            >
+              <Github className="w-4 h-4" />
+              {t("home.viewSource")}
+            </a>
           </div>
         </section>
 
-        <section id="demo" className="py-24">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="relative aspect-video rounded-3xl overflow-hidden border bg-card shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5 pointer-events-none" />
-              <video
-                src={demoVideo}
-                className="absolute inset-0 w-full h-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-              />
-            </div>
-          </div>
-        </section>
-
-        <section id="features" className="py-24 bg-secondary/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-                {t("home.featuresSection.title")}
-              </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                {t("home.featuresSection.subtitle")}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature) => (
-                <div
-                  key={feature.key}
-                  className="p-8 bg-card border rounded-2xl shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                    {feature.icon}
+        {/* Pipeline */}
+        <section className="border-y bg-secondary/30">
+          <div className="max-w-5xl mx-auto px-4 py-16">
+            <h2 className="text-center text-2xl font-bold mb-2">{t("home.pipeline.title")}</h2>
+            <p className="text-center text-muted-foreground mb-10">{t("home.pipeline.subtitle")}</p>
+            <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {steps.map((step, i) => (
+                <li key={step.key} className="rounded-xl border bg-card p-5">
+                  <div className="flex items-center gap-2 mb-2 text-primary">
+                    <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      {step.icon}
+                    </span>
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">
-                    {t(`home.featuresSection.items.${feature.key}.title`)}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {t(`home.featuresSection.items.${feature.key}.description`)}
+                  <h3 className="font-semibold mb-1">{t(`home.pipeline.steps.${step.key}.title`)}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t(`home.pipeline.steps.${step.key}.description`)}
                   </p>
-                </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* Corpus + stack */}
+        <section className="max-w-5xl mx-auto px-4 py-16 grid gap-8 lg:grid-cols-2">
+          <div>
+            <h2 className="text-2xl font-bold mb-3">{t("home.corpus.title")}</h2>
+            <p className="text-muted-foreground">{t("home.corpus.body")}</p>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold mb-3">{t("home.stack.title")}</h2>
+            <ul className="space-y-3">
+              {stack.map((item) => (
+                <li key={item.key} className="flex gap-3">
+                  <span className="shrink-0 mt-0.5">{item.icon}</span>
+                  <span>
+                    <span className="font-medium">{t(`home.stack.items.${item.key}.name`)}</span>
+                    <span className="text-muted-foreground">
+                      {" — "}
+                      {t(`home.stack.items.${item.key}.description`)}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-sm text-muted-foreground">{t("home.stack.note")}</p>
+          </div>
+        </section>
+
+        {/* Try it */}
+        <section className="border-t bg-secondary/30">
+          <div className="max-w-5xl mx-auto px-4 py-16 text-center">
+            <h2 className="text-2xl font-bold mb-6">{t("home.tryIt.title")}</h2>
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {examples.map((q) => (
+                <Link
+                  key={q}
+                  to={`/chat?q=${encodeURIComponent(q)}`}
+                  className="rounded-full border bg-background px-3.5 py-1.5 text-sm hover:bg-muted transition-colors"
+                >
+                  {q}
+                </Link>
               ))}
             </div>
+            <Link
+              to="/chat"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              {t("home.openChat")}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </section>
       </main>
 
-      <footer className="border-t py-12 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-                <Rocket className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-bold">EasyRag</span>
-            </Link>
-            <a
-              rel="noreferrer"
-              target="_blank"
-              href="https://github.com/CharlesOo0/EasyRag"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Github className="w-5 h-5" />
-            </a>
-          </div>
+      <footer className="border-t">
+        <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
+          <span>{t("home.footer")}</span>
+          <a
+            href="https://github.com/CharlesOo0/EasyRag"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+          >
+            <Github className="w-4 h-4" />
+            GitHub
+          </a>
         </div>
       </footer>
     </div>
   );
+}
+
+function asArray(value: unknown): string[] {
+  return Array.isArray(value) ? (value as string[]) : [];
 }

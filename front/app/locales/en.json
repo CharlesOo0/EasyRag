@@ -1,8 +1,4 @@
 {
-  "common": {
-    "getStarted": "Open the chat",
-    "demo": "Watch demo"
-  },
   "chat": {
     "title": "Ask the corpus",
     "back": "Home",
@@ -34,27 +30,65 @@
     "sources_other": "{{count}} sources"
   },
   "home": {
+    "toggleLanguage": "Switch language",
+    "openChat": "Open the chat",
+    "viewSource": "Source on GitHub",
     "hero": {
-      "title": "A RAG you can actually see working",
-      "subtitle": "A fixed corpus, indexed into pgvector, answered by a local model with citations. No API keys, no login."
+      "title": "A RAG you can watch work",
+      "subtitle": "A fixed corpus, indexed into pgvector, answered by a local model that cites its sources. No API keys, no login."
     },
-    "featuresSection": {
+    "pipeline": {
       "title": "How it works",
-      "subtitle": "Ingestion, retrieval and generation, end to end.",
-      "items": {
-        "performance": {
-          "title": "Local embeddings",
-          "description": "Documents are chunked and embedded with a local sentence-transformers model."
+      "subtitle": "Four steps, all on the machine it runs on.",
+      "steps": {
+        "ingest": {
+          "title": "Ingest",
+          "description": "195 country profiles are split into short, heading-anchored passages."
         },
-        "security": {
-          "title": "Vector search",
-          "description": "Questions are matched against the corpus with pgvector cosine similarity."
+        "embed": {
+          "title": "Embed",
+          "description": "Each passage becomes a 384-dim vector with a local multilingual model."
         },
-        "deployment": {
-          "title": "Grounded answers",
-          "description": "A local Ollama model answers from the retrieved passages and cites them."
+        "retrieve": {
+          "title": "Retrieve",
+          "description": "Your question is matched against every passage by cosine similarity in pgvector."
+        },
+        "generate": {
+          "title": "Generate",
+          "description": "A local model answers from the top passages and cites them by number."
         }
       }
-    }
+    },
+    "corpus": {
+      "title": "The corpus",
+      "body": "195 sovereign-country profiles from the CIA World Factbook — public domain, shipped with the repo. It's fixed: there is no upload, no account. Swapping in a different corpus is one command."
+    },
+    "stack": {
+      "title": "The stack",
+      "items": {
+        "store": {
+          "name": "pgvector",
+          "description": "a Postgres extension; cosine search over ~6,000 passage vectors, HNSW-indexed."
+        },
+        "embed": {
+          "name": "multilingual-e5-small",
+          "description": "sentence-transformers, 384 dimensions, runs on CPU."
+        },
+        "llm": {
+          "name": "Ollama · llama3.2:3b",
+          "description": "generation, entirely local."
+        }
+      },
+      "note": "No OpenAI, no hosted embedding or LLM API. It all runs in Docker on your machine."
+    },
+    "tryIt": {
+      "title": "Try it",
+      "examples": [
+        "What language is spoken in Brazil?",
+        "What is the terrain of Nepal?",
+        "When did Bangladesh gain independence?"
+      ]
+    },
+    "footer": "MIT licensed. Corpus is public domain (U.S. Government work)."
   }
 }

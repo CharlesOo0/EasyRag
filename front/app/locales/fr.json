@@ -1,8 +1,4 @@
 {
-  "common": {
-    "getStarted": "Ouvrir le chat",
-    "demo": "Voir la démo"
-  },
   "chat": {
     "title": "Interroger le corpus",
     "back": "Accueil",
@@ -34,27 +30,65 @@
     "sources_other": "{{count}} sources"
   },
   "home": {
+    "toggleLanguage": "Changer de langue",
+    "openChat": "Ouvrir le chat",
+    "viewSource": "Code sur GitHub",
     "hero": {
-      "title": "Un RAG qu'on voit vraiment fonctionner",
+      "title": "Un RAG qu'on voit fonctionner",
       "subtitle": "Un corpus figé, indexé dans pgvector, interrogé par un modèle local qui cite ses sources. Sans clé API, sans compte."
     },
-    "featuresSection": {
+    "pipeline": {
       "title": "Comment ça marche",
-      "subtitle": "Ingestion, recherche et génération, de bout en bout.",
-      "items": {
-        "performance": {
-          "title": "Embeddings locaux",
-          "description": "Les documents sont découpés et vectorisés avec un modèle sentence-transformers local."
+      "subtitle": "Quatre étapes, entièrement sur la machine qui l'exécute.",
+      "steps": {
+        "ingest": {
+          "title": "Ingestion",
+          "description": "195 fiches pays découpées en passages courts, ancrés à leur section."
         },
-        "security": {
-          "title": "Recherche vectorielle",
-          "description": "Les questions sont comparées au corpus via la similarité cosine de pgvector."
+        "embed": {
+          "title": "Vectorisation",
+          "description": "Chaque passage devient un vecteur de 384 dimensions via un modèle multilingue local."
         },
-        "deployment": {
-          "title": "Réponses sourcées",
-          "description": "Un modèle Ollama local répond à partir des passages retrouvés et les cite."
+        "retrieve": {
+          "title": "Recherche",
+          "description": "La question est comparée à chaque passage par similarité cosine dans pgvector."
+        },
+        "generate": {
+          "title": "Génération",
+          "description": "Un modèle local répond à partir des meilleurs passages et les cite par numéro."
         }
       }
-    }
+    },
+    "corpus": {
+      "title": "Le corpus",
+      "body": "195 fiches de pays souverains du CIA World Factbook — domaine public, livrées avec le dépôt. Il est figé : pas d'upload, pas de compte. Changer de corpus tient en une commande."
+    },
+    "stack": {
+      "title": "La stack",
+      "items": {
+        "store": {
+          "name": "pgvector",
+          "description": "extension Postgres ; recherche cosine sur ~6 000 vecteurs de passages, index HNSW."
+        },
+        "embed": {
+          "name": "multilingual-e5-small",
+          "description": "sentence-transformers, 384 dimensions, tourne sur CPU."
+        },
+        "llm": {
+          "name": "Ollama · llama3.2:3b",
+          "description": "génération, entièrement locale."
+        }
+      },
+      "note": "Pas d'OpenAI, pas d'API d'embedding ni de LLM hébergée. Tout tourne en Docker sur ta machine."
+    },
+    "tryIt": {
+      "title": "Essayer",
+      "examples": [
+        "Quelle langue parle-t-on au Brésil ?",
+        "Quel est le terrain du Népal ?",
+        "Quand le Bangladesh a-t-il obtenu son indépendance ?"
+      ]
+    },
+    "footer": "Sous licence MIT. Corpus dans le domaine public (œuvre du gouvernement américain)."
   }
 }
