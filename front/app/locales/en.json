@@ -83,29 +83,27 @@
     },
     "corpus": {
       "title": "The corpus",
-      "statLabel": "country profiles",
-      "body": "All 195 sovereign countries from the CIA World Factbook — public domain, shipped with the repo. Fixed: no upload, no account. Swapping in a different corpus is one command."
+      "body": "All 195 sovereign countries from the CIA World Factbook — public domain, shipped with the repo. Fixed: no upload, no account. Swapping in a different corpus is one command.",
+      "mapAlt": "Map of the 195 corpus countries, plotted at their geographic coordinates.",
+      "mapCaption": "Survey — 195 countries plotted at the coordinates on their own profile. Hover a region."
     },
     "stack": {
-      "title": "The stack",
+      "title": "The vessel",
       "items": {
         "store": {
-          "role": "Vector store",
+          "part": "The hold",
           "name": "pgvector · PostgreSQL 16",
-          "spec": "cosine · HNSW index · 384-d",
-          "description": "a Postgres extension; cosine search over ~6,000 passage vectors, HNSW-indexed."
+          "spec": "cosine · HNSW index · 384-d"
         },
         "embed": {
-          "role": "Embeddings",
+          "part": "The sextant",
           "name": "multilingual-e5-small",
-          "spec": "sentence-transformers · CPU",
-          "description": "sentence-transformers, 384 dimensions, runs on CPU."
+          "spec": "sentence-transformers · CPU"
         },
         "llm": {
-          "role": "Generation",
+          "part": "The log",
           "name": "Ollama · llama3.2:3b",
-          "spec": "/api/chat · streamed",
-          "description": "generation, entirely local."
+          "spec": "/api/chat · streamed"
         }
       },
       "note": "No OpenAI, no hosted embedding or LLM API. It all runs in Docker on your machine."

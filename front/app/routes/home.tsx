@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
@@ -65,10 +65,10 @@ export default function Home() {
               Easy<span className="text-primary">Rag</span>
             </span>
           </span>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => i18n.changeLanguage(other)}
-              className="font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:text-foreground"
+              className="rounded-sm border border-transparent px-2 py-1.5 font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               aria-label={t("home.toggleLanguage")}
             >
               {other}
@@ -131,9 +131,9 @@ export default function Home() {
           </div>
         </section>
 
-        <PipelineTrace />
-        <Gazetteer />
-        <Datasheet />
+        <Expedition />
+        <WorldPlate />
+        <ShipPlate />
 
         <section className="border-t border-border">
           <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
@@ -183,22 +183,22 @@ export default function Home() {
   );
 }
 
-/* ------------------------------------------------------------------ plates */
+/* =============================================================== l'itinéraire
+   The pipeline drawn as a survey traverse: a dashed route, four stations, and
+   what was collected at each. */
 
-function PlateHead({ n, title }: { n: string; title: string }) {
-  return (
-    <div className="flex items-end justify-between gap-4 border-b border-border pb-2">
-      <h2 className="font-heading text-2xl font-semibold sm:text-3xl">{title}</h2>
-      <span className="shrink-0 pb-1 font-mono text-[0.7rem] tracking-[0.22em] text-muted-foreground uppercase">
-        Pl.&nbsp;{n}
-      </span>
-    </div>
-  );
-}
+const STATIONS = [
+  { x: 125, y: 100 },
+  { x: 375, y: 58 },
+  { x: 625, y: 96 },
+  { x: 875, y: 52 },
+];
 
-/** Pl. I — one document's trace through the pipeline, each stage's real
- * artifact shown, not a feature card. */
-function PipelineTrace() {
+const ROUTE =
+  "M 20 112 C 60 106 90 102 125 100 C 210 94 290 66 375 58 C 465 50 545 88 625 96 " +
+  "C 715 105 800 72 875 52 C 915 42 950 36 980 30";
+
+function Expedition() {
   const { t } = useTranslation();
   const stages = STEP_KEYS.map((key, i) => ({
     key,
@@ -212,38 +212,58 @@ function PipelineTrace() {
   return (
     <section className="border-t border-border">
       <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-        <PlateHead n="I" title={t("home.pipeline.title")} />
-        <p className="mt-4 max-w-prose text-muted-foreground">{t("home.pipeline.subtitle")}</p>
-        <p className="mt-6 font-mono text-xs text-muted-foreground">{t("home.pipeline.trace")}</p>
+        <h2 className="font-heading text-2xl font-semibold sm:text-3xl">
+          {t("home.pipeline.title")}
+        </h2>
+        <p className="mt-3 max-w-prose text-muted-foreground">{t("home.pipeline.subtitle")}</p>
+        <p className="mt-8 font-mono text-xs text-muted-foreground">{t("home.pipeline.trace")}</p>
 
-        <ol className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-stretch">
-          {stages.map((s, i) => (
-            <Fragment key={s.key}>
-              <li className="flex flex-1 flex-col">
-                <div className="relative flex min-h-[7.5rem] flex-1 items-center border border-border bg-card p-3.5">
-                  <span
-                    className={`absolute -top-2.5 left-3 bg-background px-1 font-mono text-xs font-semibold ${s.accent}`}
-                  >
-                    {s.n}
-                  </span>
-                  <p className="font-mono text-[0.7rem] leading-relaxed break-words text-foreground/80">
-                    {s.artifact}
-                  </p>
-                </div>
-                <h3 className="mt-2.5 font-heading text-sm font-semibold">{s.title}</h3>
-                <p className="mt-0.5 font-mono text-[0.7rem] tracking-wide text-muted-foreground">
-                  {s.meta}
-                </p>
-              </li>
-              {i < stages.length - 1 && (
-                <span
-                  aria-hidden="true"
-                  className="self-center font-mono text-muted-foreground max-lg:rotate-90"
-                >
-                  &rarr;
-                </span>
-              )}
-            </Fragment>
+        <svg
+          viewBox="0 0 1000 150"
+          preserveAspectRatio="none"
+          className="mt-2 hidden h-[150px] w-full lg:block"
+          aria-hidden="true"
+        >
+          <path
+            d={ROUTE}
+            fill="none"
+            strokeWidth="1.5"
+            strokeDasharray="6 5"
+            className="stroke-border"
+          />
+          <path d="M 968 34 L 984 28 L 972 20" fill="none" strokeWidth="1.5" className="stroke-border" />
+          {STATIONS.map((s, i) => (
+            <g key={i} className={STEP_ACCENT[i]}>
+              <line
+                x1={s.x}
+                y1={s.y + 9}
+                x2={s.x}
+                y2={150}
+                strokeWidth="1"
+                strokeDasharray="3 4"
+                className="stroke-border"
+              />
+              <circle cx={s.x} cy={s.y} r="7.5" className="fill-background" stroke="currentColor" strokeWidth="1.6" />
+              <line x1={s.x - 3.5} y1={s.y} x2={s.x + 3.5} y2={s.y} stroke="currentColor" strokeWidth="1.4" />
+              <line x1={s.x} y1={s.y - 3.5} x2={s.x} y2={s.y + 3.5} stroke="currentColor" strokeWidth="1.4" />
+            </g>
+          ))}
+        </svg>
+
+        <ol className="mt-6 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:mt-0 lg:grid-cols-4">
+          {stages.map((s) => (
+            <li key={s.key}>
+              <div className="flex items-baseline gap-2">
+                <span className={`font-mono text-xs font-semibold ${s.accent}`}>{s.n}</span>
+                <h3 className="font-heading text-base font-semibold">{s.title}</h3>
+              </div>
+              <p className="mt-2 border-l border-border pl-3 font-mono text-[0.7rem] leading-relaxed break-words text-foreground/75">
+                {s.artifact}
+              </p>
+              <p className="mt-2 font-mono text-[0.7rem] tracking-wide text-muted-foreground">
+                {s.meta}
+              </p>
+            </li>
           ))}
         </ol>
       </div>
@@ -251,81 +271,248 @@ function PipelineTrace() {
   );
 }
 
-/** Pl. II — the corpus as a gazetteer: every profile, grouped by region. */
-function Gazetteer() {
+/* ==================================================================== la carte
+   Every profile plotted at its real Factbook coordinates. Hovering a region in
+   the legend lights up its countries. */
+
+const MAP_W = 1000;
+const MAP_H = 380;
+const LAT_TOP = 72;
+const LAT_SPAN = 122; // down to -50
+
+const project = (lat: number, lon: number) => ({
+  x: ((lon + 180) / 360) * MAP_W,
+  y: ((LAT_TOP - lat) / LAT_SPAN) * MAP_H,
+});
+
+function WorldPlate() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language === "en" ? "en" : "fr";
+  const [active, setActive] = useState<string | null>(null);
 
-  const byRegion = new Map<string, typeof CORPUS_INDEX>();
-  for (const entry of CORPUS_INDEX) {
-    const list = byRegion.get(entry.region) ?? [];
-    list.push(entry);
-    byRegion.set(entry.region, list);
-  }
+  const counts = new Map<string, number>();
+  for (const c of CORPUS_INDEX) counts.set(c.region, (counts.get(c.region) ?? 0) + 1);
+
+  const meridians = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150];
+  const parallels = [60, 40, 20, 0, -20, -40];
 
   return (
     <section className="border-t border-border">
       <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-        <PlateHead n="II" title={t("home.corpus.title")} />
-        <p className="mt-4 max-w-prose text-muted-foreground">{t("home.corpus.body")}</p>
+        <h2 className="font-heading text-2xl font-semibold sm:text-3xl">
+          {t("home.corpus.title")}
+        </h2>
+        <p className="mt-3 max-w-prose text-muted-foreground">{t("home.corpus.body")}</p>
 
-        <dl className="mt-8 border-t border-border">
-          {REGION_ORDER.map((region) => {
-            const items = byRegion.get(region) ?? [];
-            if (!items.length) return null;
-            return (
-              <div
-                key={region}
-                className="grid gap-x-8 gap-y-1.5 border-b border-border py-3.5 sm:grid-cols-[14rem_1fr]"
+        <figure className="m-0 mt-8">
+          <svg
+            viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+            className="w-full"
+            role="img"
+            aria-label={t("home.corpus.mapAlt")}
+          >
+            <rect
+              x="0.5"
+              y="0.5"
+              width={MAP_W - 1}
+              height={MAP_H - 1}
+              fill="none"
+              strokeWidth="1"
+              className="stroke-border"
+            />
+            <g className="stroke-border" strokeWidth="0.75" opacity="0.7">
+              {meridians.map((lon) => {
+                const { x } = project(0, lon);
+                return <line key={`m${lon}`} x1={x} y1="0" x2={x} y2={MAP_H} />;
+              })}
+              {parallels.map((lat) => {
+                const { y } = project(lat, 0);
+                return (
+                  <line
+                    key={`p${lat}`}
+                    x1="0"
+                    y1={y}
+                    x2={MAP_W}
+                    y2={y}
+                    strokeWidth={lat === 0 ? "1.2" : "0.75"}
+                  />
+                );
+              })}
+            </g>
+            <g className="stroke-foreground/60" strokeWidth="1">
+              {meridians.map((lon) => {
+                const { x } = project(0, lon);
+                return (
+                  <Fragment key={`t${lon}`}>
+                    <line x1={x} y1="0" x2={x} y2="6" />
+                    <line x1={x} y1={MAP_H} x2={x} y2={MAP_H - 6} />
+                  </Fragment>
+                );
+              })}
+              {parallels.map((lat) => {
+                const { y } = project(lat, 0);
+                return (
+                  <Fragment key={`u${lat}`}>
+                    <line x1="0" y1={y} x2="6" y2={y} />
+                    <line x1={MAP_W} y1={y} x2={MAP_W - 6} y2={y} />
+                  </Fragment>
+                );
+              })}
+            </g>
+            {CORPUS_INDEX.map((c) => {
+              const { x, y } = project(c.lat, c.lon);
+              const on = active === c.region;
+              return (
+                <circle
+                  key={c.slug}
+                  cx={x}
+                  cy={y}
+                  r={on ? 4.5 : 3}
+                  className={
+                    "transition-all duration-200 " +
+                    (on ? "fill-primary" : active ? "fill-foreground/20" : "fill-foreground/55")
+                  }
+                >
+                  <title>{c.name}</title>
+                </circle>
+              );
+            })}
+          </svg>
+          <figcaption className="mt-2 border-t border-border pt-2 font-mono text-[0.7rem] tracking-wide text-muted-foreground">
+            {t("home.corpus.mapCaption")}
+          </figcaption>
+        </figure>
+
+        <ul className="mt-6 grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+          {REGION_ORDER.map((region) => (
+            <li key={region}>
+              <button
+                type="button"
+                onMouseEnter={() => setActive(region)}
+                onMouseLeave={() => setActive(null)}
+                onFocus={() => setActive(region)}
+                onBlur={() => setActive(null)}
+                className={
+                  "flex w-full items-baseline gap-2 border-b border-border/70 py-1.5 text-left font-mono text-[0.7rem] tracking-wide uppercase transition-colors focus-visible:outline-none " +
+                  (active === region ? "text-primary" : "text-muted-foreground hover:text-foreground")
+                }
               >
-                <dt className="font-mono text-[0.7rem] tracking-[0.14em] text-muted-foreground uppercase">
-                  {REGION_LABEL[region][lang]}
-                  <span className="text-foreground/35"> · {items.length}</span>
-                </dt>
-                <dd className="text-sm leading-relaxed">
-                  {items.map((c, i) => (
-                    <span key={c.slug}>
-                      {i > 0 && <span className="text-border"> · </span>}
-                      {c.name}
-                    </span>
-                  ))}
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
-
-        <p className="mt-4 font-mono text-xs text-muted-foreground">
-          {CORPUS_INDEX.length} {t("home.corpus.statLabel")} &middot; {REGION_ORDER.length}{" "}
-          {lang === "fr" ? "régions" : "regions"} &middot; CIA World Factbook
-        </p>
+                <span
+                  className={
+                    "inline-block h-1.5 w-1.5 shrink-0 rounded-full transition-colors " +
+                    (active === region ? "bg-primary" : "bg-foreground/40")
+                  }
+                />
+                <span className="flex-1">{REGION_LABEL[region][lang]}</span>
+                <span className="tabular-nums">{counts.get(region) ?? 0}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
 }
 
-/** Pl. III — the stack as a datasheet, map-margin style. */
-function Datasheet() {
+/* =================================================================== le navire
+   The stack as the vessel that carries the voyage: hold, instruments, log. */
+
+function ShipPlate() {
   const { t } = useTranslation();
   return (
     <section className="border-t border-border">
       <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-        <PlateHead n="III" title={t("home.stack.title")} />
-        <dl className="mt-8 border-t border-border font-mono text-sm">
+        <h2 className="font-heading text-2xl font-semibold sm:text-3xl">
+          {t("home.stack.title")}
+        </h2>
+        <p className="mt-3 max-w-prose text-muted-foreground">{t("home.stack.note")}</p>
+
+        <svg viewBox="0 0 1000 340" className="mt-8 w-full" aria-hidden="true">
+          <g className="stroke-foreground" fill="none" strokeWidth="1.3" strokeLinejoin="round">
+            {/* rigging — kept to a few stays so nothing crosses a sail */}
+            <g strokeWidth="0.7" opacity="0.5">
+              <path d="M 530 34 L 350 64 M 530 34 L 710 88 M 350 64 L 118 156 M 710 88 L 862 168" />
+            </g>
+            {/* masts */}
+            <path d="M 350 208 L 350 60 M 530 216 L 530 30 M 710 205 L 710 86" />
+            {/* yards */}
+            <g strokeWidth="0.9">
+              <path d="M 292 90 L 408 90 M 460 56 L 600 56 M 460 140 L 600 140 M 657 110 L 763 110" />
+            </g>
+            {/* square sails: straight on the yard, bellied at the foot */}
+            <g className="fill-background" strokeWidth="1.1">
+              <path d="M 300 90 L 400 90 L 400 152 Q 350 172 300 152 Z" />
+              <path d="M 470 56 L 590 56 L 590 124 Q 530 146 470 124 Z" />
+              <path d="M 470 140 L 590 140 L 590 206 Q 530 228 470 206 Z" />
+              <path d="M 665 110 L 755 110 L 755 166 Q 710 184 665 166 Z" />
+            </g>
+            {/* hull — a lens between sheer and keel, cut by the waterline */}
+            <path d="M 200 192 Q 530 216 860 180 Q 530 296 200 192 Z" className="fill-card" />
+            <path d="M 228 200 Q 530 224 832 190" strokeWidth="0.9" />
+            {/* stern castle */}
+            <path d="M 786 154 L 862 148 L 858 182 Q 822 190 790 190 Z" className="fill-card" />
+            {/* gun ports */}
+            <g strokeWidth="0.85">
+              {[
+                [300, 216],
+                [360, 220],
+                [420, 223],
+                [480, 225],
+                [540, 225],
+                [600, 224],
+                [660, 221],
+                [720, 216],
+              ].map(([x, y]) => (
+                <rect key={x} x={x} y={y} width="12" height="9" />
+              ))}
+            </g>
+            {/* bowsprit + jib */}
+            <path d="M 200 192 L 110 156" />
+            <path d="M 132 166 L 200 196 L 200 146 Z" className="fill-background" strokeWidth="1.1" />
+            {/* flag */}
+            <path d="M 530 30 L 574 42 L 530 54 Z" className="fill-primary" stroke="none" />
+            {/* the sextant, on deck */}
+            <g transform="translate(624 198)" strokeWidth="1.1">
+              <circle r="11" className="fill-background" />
+              <path d="M 0 -11 L 3 0 L 0 11 L -3 0 Z" className="fill-foreground" strokeWidth="0.6" />
+              <path d="M -11 0 L 0 2.5 L 11 0 L 0 -2.5 Z" strokeWidth="0.6" />
+            </g>
+          </g>
+
+          {/* sea */}
+          <g className="stroke-border" strokeWidth="1" fill="none">
+            <line x1="40" y1="262" x2="960" y2="262" strokeDasharray="10 7" />
+            <path d="M 120 282 q 15 -8 30 0 M 300 290 q 15 -8 30 0 M 690 288 q 15 -8 30 0 M 880 278 q 15 -8 30 0" />
+          </g>
+
+          {/* callouts */}
+          <g className="stroke-border" strokeWidth="1" strokeDasharray="3 4" fill="none">
+            <path d="M 300 246 L 300 306 L 30 306 L 30 336" />
+            <path d="M 624 215 L 624 306 L 363 306 L 363 336" />
+            <path d="M 824 186 L 824 306 L 696 306 L 696 336" />
+          </g>
+          <g className="fill-background stroke-primary" strokeWidth="1.5">
+            <circle cx="300" cy="240" r="4.5" />
+            <circle cx="624" cy="209" r="4.5" />
+            <circle cx="824" cy="180" r="4.5" />
+          </g>
+        </svg>
+
+        <dl className="grid gap-x-8 gap-y-6 sm:grid-cols-3">
           {STACK_KEYS.map((key) => (
-            <div
-              key={key}
-              className="grid items-baseline gap-x-6 gap-y-0.5 border-b border-border py-3.5 sm:grid-cols-[10rem_13rem_1fr]"
-            >
-              <dt className="text-[0.7rem] tracking-[0.14em] text-muted-foreground uppercase">
-                {t(`home.stack.items.${key}.role`)}
+            <div key={key}>
+              <dt className="font-mono text-[0.7rem] tracking-[0.16em] text-primary uppercase">
+                {t(`home.stack.items.${key}.part`)}
               </dt>
-              <dd className="text-foreground">{t(`home.stack.items.${key}.name`)}</dd>
-              <dd className="text-muted-foreground">{t(`home.stack.items.${key}.spec`)}</dd>
+              <dd className="mt-1.5 font-mono text-sm text-foreground">
+                {t(`home.stack.items.${key}.name`)}
+              </dd>
+              <dd className="mt-0.5 font-mono text-[0.7rem] text-muted-foreground">
+                {t(`home.stack.items.${key}.spec`)}
+              </dd>
             </div>
           ))}
         </dl>
-        <p className="mt-4 max-w-prose text-sm text-muted-foreground">{t("home.stack.note")}</p>
       </div>
     </section>
   );

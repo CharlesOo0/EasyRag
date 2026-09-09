@@ -83,29 +83,27 @@
     },
     "corpus": {
       "title": "Le corpus",
-      "statLabel": "fiches pays",
-      "body": "Les 195 pays souverains du CIA World Factbook — domaine public, livrés avec le dépôt. Figé : pas d'upload, pas de compte. Changer de corpus tient en une commande."
+      "body": "Les 195 pays souverains du CIA World Factbook — domaine public, livrés avec le dépôt. Figé : pas d'upload, pas de compte. Changer de corpus tient en une commande.",
+      "mapAlt": "Carte des 195 pays du corpus, placés à leurs coordonnées géographiques.",
+      "mapCaption": "Relevé — 195 pays placés aux coordonnées de leur fiche. Survolez une région."
     },
     "stack": {
-      "title": "La stack",
+      "title": "Le navire",
       "items": {
         "store": {
-          "role": "Magasin vectoriel",
+          "part": "La cale",
           "name": "pgvector · PostgreSQL 16",
-          "spec": "cosine · index HNSW · 384-d",
-          "description": "extension Postgres ; recherche cosine sur ~6 000 vecteurs de passages, index HNSW."
+          "spec": "cosine · index HNSW · 384-d"
         },
         "embed": {
-          "role": "Embeddings",
+          "part": "Le sextant",
           "name": "multilingual-e5-small",
-          "spec": "sentence-transformers · CPU",
-          "description": "sentence-transformers, 384 dimensions, tourne sur CPU."
+          "spec": "sentence-transformers · CPU"
         },
         "llm": {
-          "role": "Génération",
+          "part": "Le journal de bord",
           "name": "Ollama · llama3.2:3b",
-          "spec": "/api/chat · streamé",
-          "description": "génération, entièrement locale."
+          "spec": "/api/chat · streamé"
         }
       },
       "note": "Pas d'OpenAI, pas d'API d'embedding ni de LLM hébergée. Tout tourne en Docker sur ta machine."
