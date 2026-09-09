@@ -42,40 +42,42 @@ export default function ChatRoute() {
   return (
     <SourceViewerProvider>
       <div className="flex h-screen flex-col bg-background text-foreground">
-        <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border px-4 sm:px-6">
-          <Link
-            to="/"
-            className="flex items-center gap-2 font-heading text-lg font-semibold tracking-tight transition-colors hover:text-primary"
-          >
-            <CompassMark className="h-5 w-5 text-primary" />
-            <span>
-              Easy<span className="text-primary">Rag</span>
-            </span>
-          </Link>
-
-          <span className="hidden font-mono text-[0.7rem] tracking-[0.18em] text-muted-foreground uppercase sm:block">
-            {t("chat.title")}
-          </span>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => i18n.changeLanguage(other)}
-              className="cursor-pointer rounded-sm border border-transparent px-2 py-1.5 font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-              aria-label={t("chat.toggleLanguage")}
-            >
-              {other}
-            </button>
+        <header className="shrink-0 border-b border-border">
+          <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-4 px-4 sm:px-6">
             <Link
               to="/"
-              className="font-mono text-xs tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+              className="flex items-center gap-2 font-heading text-lg font-semibold tracking-tight transition-colors hover:text-primary"
             >
-              &larr; {t("chat.back")}
+              <CompassMark className="h-5 w-5 text-primary" />
+              <span>
+                Easy<span className="text-primary">Rag</span>
+              </span>
             </Link>
+
+            <span className="hidden font-mono text-[0.7rem] tracking-[0.18em] text-muted-foreground uppercase sm:block">
+              {t("chat.title")}
+            </span>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => i18n.changeLanguage(other)}
+                className="cursor-pointer rounded-sm border border-transparent px-2 py-1.5 font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                aria-label={t("chat.toggleLanguage")}
+              >
+                {other}
+              </button>
+              <Link
+                to="/"
+                className="font-mono text-xs tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+              >
+                &larr; {t("chat.back")}
+              </Link>
+            </div>
           </div>
         </header>
 
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-2xl space-y-7 px-4 py-8 sm:px-6">
+          <div className="mx-auto max-w-3xl space-y-7 px-4 py-8 sm:px-6">
             {messages.length === 0 ? (
               <EmptyState onPick={send} />
             ) : (
@@ -92,9 +94,9 @@ export default function ChatRoute() {
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-border px-4 py-4 sm:px-6">
+        <div className="shrink-0 border-t border-border py-4">
           <form
-            className="mx-auto max-w-2xl"
+            className="mx-auto max-w-3xl px-4 sm:px-6"
             onSubmit={(e) => {
               e.preventDefault();
               submit();
