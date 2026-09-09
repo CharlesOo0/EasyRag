@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import { CORPUS_INDEX } from "~/data/corpus-index";
-import { WORLD_LAND_PATH } from "~/data/world-land";
+import { REGION_PATHS, TINY_STATES, WORLD_CONTEXT } from "~/data/world-regions";
 
 export function meta() {
   return [
@@ -69,7 +69,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => i18n.changeLanguage(other)}
-              className="rounded-sm border border-transparent px-2 py-1.5 font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="cursor-pointer rounded-sm border border-transparent px-2 py-1.5 font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               aria-label={t("home.toggleLanguage")}
             >
               {other}
@@ -315,8 +315,8 @@ function Expedition() {
 }
 
 /* ==================================================================== la carte
-   Every profile plotted at its real Factbook coordinates over Natural Earth
-   coastlines. Hovering a region in the legend lights up its countries. */
+   The corpus drawn as territory: every country outlined, grouped by region.
+   Pointing at a region — in the legend or on the map — lights it up. */
 
 // True plate carree: both axes at MAP_W / 360 = 2.778 units per degree, so the
 // continents keep their shape. MAP_H is derived, not chosen.
@@ -340,6 +340,7 @@ function WorldPlate() {
 
   const meridians = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150];
   const parallels = [60, 40, 20, 0, -20, -40];
+  const idle = active === null;
 
   return (
     <section className="border-t border-border">
@@ -356,12 +357,6 @@ function WorldPlate() {
             role="img"
             aria-label={t("home.corpus.mapAlt")}
           >
-            <defs>
-              <clipPath id="corpus-plate">
-                <rect x="0" y="0" width={MAP_W} height={MAP_H} />
-              </clipPath>
-            </defs>
-
             {/* graticule */}
             <g className="stroke-border" strokeWidth="0.75" opacity="0.8">
               {meridians.map((lon) => {
@@ -383,15 +378,52 @@ function WorldPlate() {
               })}
             </g>
 
-            {/* coastlines */}
-            <g clipPath="url(#corpus-plate)">
-              <path
-                d={WORLD_LAND_PATH}
-                className="fill-foreground/[0.06] stroke-foreground/35"
-                strokeWidth="0.8"
-                strokeLinejoin="round"
+            {/* land that is not in the corpus — territories, ice, Antarctica */}
+            <path d={WORLD_CONTEXT} className="fill-foreground/[0.05]" stroke="none" />
+
+            {/* the corpus, by region. Every path stays mounted so hovering only
+                swaps classes - remounting a path this size drops frames. */}
+            {REGION_ORDER.map((region) => {
+              const d = REGION_PATHS[region];
+              if (!d) return null;
+              const on = region === active;
+              return (
+                <path
+                  key={region}
+                  d={d}
+                  onMouseEnter={() => setActive(region)}
+                  onMouseLeave={() => setActive(null)}
+                  strokeWidth={on ? 1.2 : 0.4}
+                  strokeLinejoin="round"
+                  className={
+                    "cursor-pointer transition-all duration-300 " +
+                    (on
+                      ? "fill-primary/75 stroke-primary"
+                      : idle
+                        ? "fill-foreground/[0.13] stroke-foreground/30"
+                        : "fill-foreground/[0.06] stroke-foreground/15")
+                  }
+                />
+              );
+            })}
+
+            {/* states too small to draw */}
+            {TINY_STATES.map((s) => (
+              <circle
+                key={s.slug}
+                cx={s.x}
+                cy={s.y}
+                r={s.region === active ? 3.4 : 2.4}
+                className={
+                  "transition-all duration-300 " +
+                  (s.region === active
+                    ? "fill-primary"
+                    : idle
+                      ? "fill-foreground/45"
+                      : "fill-foreground/20")
+                }
               />
-            </g>
+            ))}
 
             {/* frame + degree ticks */}
             <rect
@@ -423,26 +455,6 @@ function WorldPlate() {
                 );
               })}
             </g>
-
-            {/* the corpus */}
-            {CORPUS_INDEX.map((c) => {
-              const { x, y } = project(c.lat, c.lon);
-              const on = active === c.region;
-              return (
-                <circle
-                  key={c.slug}
-                  cx={x}
-                  cy={y}
-                  r={on ? 4.5 : 3}
-                  className={
-                    "transition-all duration-200 " +
-                    (on ? "fill-primary" : active ? "fill-foreground/25" : "fill-foreground/70")
-                  }
-                >
-                  <title>{c.name}</title>
-                </circle>
-              );
-            })}
           </svg>
           <figcaption className="mt-2 border-t border-border pt-2 font-mono text-[0.7rem] tracking-wide text-muted-foreground">
             {t("home.corpus.mapCaption")}
@@ -459,7 +471,7 @@ function WorldPlate() {
                 onFocus={() => setActive(region)}
                 onBlur={() => setActive(null)}
                 className={
-                  "flex w-full items-baseline gap-2 border-b border-border/70 py-1.5 text-left font-mono text-[0.7rem] tracking-wide uppercase transition-colors focus-visible:outline-none " +
+                  "flex w-full cursor-pointer items-baseline gap-2 border-b border-border/70 py-1.5 text-left font-mono text-[0.7rem] tracking-wide uppercase transition-colors focus-visible:outline-none " +
                   (active === region ? "text-primary" : "text-muted-foreground hover:text-foreground")
                 }
               >

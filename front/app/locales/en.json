@@ -89,8 +89,8 @@
     "corpus": {
       "title": "The corpus",
       "body": "All 195 sovereign countries from the CIA World Factbook — public domain, shipped with the repo. Fixed: no upload, no account. Swapping in a different corpus is one command.",
-      "mapAlt": "Map of the 195 corpus countries, plotted at their geographic coordinates.",
-      "mapCaption": "Survey — 195 countries at the coordinates on their own profile. The smallest island states are too small to draw. Hover a region."
+      "mapAlt": "Map of the 195 corpus countries, outlined and grouped by region.",
+      "mapCaption": "The 195 corpus countries, outlined and grouped by region. Hover a region; micro-states show as a mark."
     },
     "stack": {
       "title": "The stack",
