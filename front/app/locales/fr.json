@@ -40,49 +40,75 @@
     "openChat": "Ouvrir le chat",
     "viewSource": "Code sur GitHub",
     "hero": {
+      "eyebrow": "Démo RAG · 100 % local",
       "title": "Un RAG qu'on voit fonctionner",
       "subtitle": "Un corpus figé, indexé dans pgvector, interrogé par un modèle local qui cite ses sources. Sans clé API, sans compte."
     },
+    "demo": {
+      "caption": "Exemple",
+      "you": "Vous",
+      "assistant": "EasyRag",
+      "question": "Quel est le terrain du Népal ?",
+      "answer": "Le Népal s'étage du sud au nord : la plaine du Teraï, une région de collines, puis les reliefs de l'Himalaya [1] — le mont Everest y culmine à 8 849 m [2].",
+      "sourcesLabel": "Sources",
+      "source1": "Népal · Géographie",
+      "source2": "Népal · Géographie"
+    },
     "pipeline": {
       "title": "Comment ça marche",
-      "subtitle": "Quatre étapes, entièrement sur la machine qui l'exécute.",
+      "subtitle": "Quatre étapes, entièrement sur la machine qui l'exécute. Voici une même donnée qui les traverse.",
+      "mapAlt": "Carte de l'itinéraire : le débarquement, l'archive, le pic de relevé, la rose des vents, et la croix qui marque la réponse.",
+      "trace": "Trace — corpus/nepal.md · Geography",
       "steps": {
         "ingest": {
           "title": "Ingestion",
-          "description": "195 fiches pays découpées en passages courts, ancrés à leur section."
+          "description": "195 fiches pays découpées en passages courts, ancrés à leur section.",
+          "meta": "195 fichiers → passages",
+          "artifact": "Terrain: Tarai or flat river plain of the Ganges in south, central hill region, rugged Himalayas in north"
         },
         "embed": {
           "title": "Vectorisation",
-          "description": "Chaque passage devient un vecteur de 384 dimensions via un modèle multilingue local."
+          "description": "Chaque passage devient un vecteur de 384 dimensions via un modèle multilingue local.",
+          "meta": "passage → vecteur 384-d",
+          "artifact": "[ 0.018, −0.114, 0.267, −0.041, 0.152, … ]  ·  L2"
         },
         "retrieve": {
           "title": "Recherche",
-          "description": "La question est comparée à chaque passage par similarité cosine dans pgvector."
+          "description": "La question est comparée à chaque passage par similarité cosine dans pgvector.",
+          "meta": "k plus proches · cosine",
+          "artifact": "Nepal › Geography          sim 0.84"
         },
         "generate": {
           "title": "Génération",
-          "description": "Un modèle local répond à partir des meilleurs passages et les cite par numéro."
+          "description": "Un modèle local répond à partir des meilleurs passages et les cite par numéro.",
+          "meta": "réponse citée [n]",
+          "artifact": "« …puis les reliefs de l'Himalaya [1] — le mont Everest y culmine à 8 849 m [2]. »"
         }
       }
     },
     "corpus": {
       "title": "Le corpus",
-      "body": "195 fiches de pays souverains du CIA World Factbook — domaine public, livrées avec le dépôt. Il est figé : pas d'upload, pas de compte. Changer de corpus tient en une commande."
+      "body": "Les 195 pays souverains du CIA World Factbook — domaine public, livrés avec le dépôt. Figé : pas d'upload, pas de compte. Changer de corpus tient en une commande.",
+      "mapAlt": "Carte des 195 pays du corpus, détourés et groupés par région.",
+      "mapCaption": "Les 195 pays du corpus, détourés et groupés par région. Survolez une région ; les micro-États apparaissent en repère."
     },
     "stack": {
       "title": "La stack",
       "items": {
         "store": {
-          "name": "pgvector",
-          "description": "extension Postgres ; recherche cosine sur ~6 000 vecteurs de passages, index HNSW."
+          "role": "Base vectorielle",
+          "name": "pgvector · PostgreSQL 16",
+          "spec": "cosine · index HNSW · 384-d"
         },
         "embed": {
+          "role": "Embeddings",
           "name": "multilingual-e5-small",
-          "description": "sentence-transformers, 384 dimensions, tourne sur CPU."
+          "spec": "sentence-transformers · CPU"
         },
         "llm": {
+          "role": "Génération",
           "name": "Ollama · llama3.2:3b",
-          "description": "génération, entièrement locale."
+          "spec": "/api/chat · streamé"
         }
       },
       "note": "Pas d'OpenAI, pas d'API d'embedding ni de LLM hébergée. Tout tourne en Docker sur ta machine."

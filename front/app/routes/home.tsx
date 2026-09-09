@@ -1,192 +1,647 @@
-import type { ReactNode } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowRight,
-  Database,
-  Github,
-  Languages,
-  Layers,
-  MessageSquareQuote,
-  Rocket,
-  Search,
-  Sparkles,
-} from "lucide-react";
+
+import { CORPUS_INDEX } from "~/data/corpus-index";
+import { REGION_PATHS, TINY_STATES, WORLD_CONTEXT } from "~/data/world-regions";
 
 export function meta() {
-  return [{ title: "EasyRag" }];
+  return [
+    { title: "EasyRag" },
+    {
+      name: "description",
+      content:
+        "A local-only RAG showcase: 195 CIA World Factbook country profiles, indexed into pgvector, answered with citations.",
+    },
+  ];
 }
+
+const STEP_KEYS = ["ingest", "embed", "retrieve", "generate"] as const;
+const STACK_KEYS = ["store", "embed", "llm"] as const;
+const REPO_URL = "https://github.com/CharlesOo0/EasyRag";
+
+const STEP_ACCENT = ["text-chart-1", "text-chart-2", "text-chart-3", "text-chart-4"];
+
+const REGION_ORDER = [
+  "africa",
+  "europe",
+  "east-n-southeast-asia",
+  "central-america-n-caribbean",
+  "middle-east",
+  "australia-oceania",
+  "south-america",
+  "central-asia",
+  "south-asia",
+  "north-america",
+] as const;
+
+const REGION_LABEL: Record<string, { fr: string; en: string }> = {
+  africa: { fr: "Afrique", en: "Africa" },
+  europe: { fr: "Europe", en: "Europe" },
+  "east-n-southeast-asia": { fr: "Asie de l'Est & du Sud-Est", en: "East & Southeast Asia" },
+  "central-america-n-caribbean": {
+    fr: "Amérique centrale & Caraïbes",
+    en: "Central America & Caribbean",
+  },
+  "middle-east": { fr: "Moyen-Orient", en: "Middle East" },
+  "australia-oceania": { fr: "Australie & Océanie", en: "Australia & Oceania" },
+  "south-america": { fr: "Amérique du Sud", en: "South America" },
+  "central-asia": { fr: "Asie centrale", en: "Central Asia" },
+  "south-asia": { fr: "Asie du Sud", en: "South Asia" },
+  "north-america": { fr: "Amérique du Nord", en: "North America" },
+};
 
 export default function Home() {
   const { t, i18n } = useTranslation();
-  const toggleLanguage = () => i18n.changeLanguage(i18n.language === "fr" ? "en" : "fr");
-
-  const steps: { icon: ReactNode; key: string }[] = [
-    { icon: <Layers className="w-5 h-5" />, key: "ingest" },
-    { icon: <Sparkles className="w-5 h-5" />, key: "embed" },
-    { icon: <Search className="w-5 h-5" />, key: "retrieve" },
-    { icon: <MessageSquareQuote className="w-5 h-5" />, key: "generate" },
-  ];
-
-  const stack: { icon: ReactNode; key: string }[] = [
-    { icon: <Database className="w-5 h-5 text-primary" />, key: "store" },
-    { icon: <Sparkles className="w-5 h-5 text-primary" />, key: "embed" },
-    { icon: <MessageSquareQuote className="w-5 h-5 text-primary" />, key: "llm" },
-  ];
-
+  const other = i18n.language === "fr" ? "en" : "fr";
   const examples = asArray(t("home.tryIt.examples", { returnObjects: true }));
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground font-sans">
-      <nav className="border-b">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="flex items-center gap-2 font-bold text-lg">
-            <span className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
-              <Rocket className="w-4 h-4 text-primary-foreground" />
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <nav className="border-b border-border">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+          <span className="flex items-center gap-2 font-heading text-lg font-semibold tracking-tight">
+            <CompassMark className="h-5 w-5 text-primary" />
+            <span>
+              Easy<span className="text-primary">Rag</span>
             </span>
-            EasyRag
           </span>
           <div className="flex items-center gap-3">
             <button
-              onClick={toggleLanguage}
-              className="p-2 rounded-full hover:bg-secondary transition-colors"
+              onClick={() => i18n.changeLanguage(other)}
+              className="cursor-pointer rounded-sm border border-transparent px-2 py-1.5 font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               aria-label={t("home.toggleLanguage")}
             >
-              <Languages className="w-4 h-4" />
+              {other}
             </button>
             <Link
               to="/chat"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-sm bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {t("home.openChat")}
-              <ArrowRight className="w-4 h-4" />
+              <Arrow />
             </Link>
           </div>
         </div>
       </nav>
 
       <main className="flex-1">
-        {/* Hero */}
-        <section className="max-w-5xl mx-auto px-4 py-20 text-center">
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
-            {t("home.hero.title")}
-          </h1>
-          <p className="max-w-xl mx-auto text-lg text-muted-foreground mb-8">
-            {t("home.hero.subtitle")}
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              to="/chat"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              {t("home.openChat")}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a
-              href="https://github.com/CharlesOo0/EasyRag"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border px-6 py-3 font-medium hover:bg-muted transition-colors"
-            >
-              <Github className="w-4 h-4" />
-              {t("home.viewSource")}
-            </a>
+        <section className="relative isolate overflow-hidden border-b border-border">
+          <HeroContours />
+          <div className="mx-auto grid max-w-5xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_25rem] lg:items-start lg:py-20">
+            <div>
+              <p className="flex items-center gap-3 font-mono text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                <span className="h-px w-6 bg-current" />
+                {t("home.hero.eyebrow")}
+              </p>
+              <h1 className="mt-5 font-heading text-[2.75rem] leading-[1.05] font-semibold tracking-tight text-balance sm:text-6xl">
+                {t("home.hero.title")}
+              </h1>
+              <p className="mt-6 max-w-prose text-lg text-muted-foreground">
+                {t("home.hero.subtitle")}
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  to="/chat"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm bg-primary px-5 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  {t("home.openChat")}
+                  <Arrow />
+                </Link>
+                <a
+                  href={REPO_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-sm border border-border px-5 py-3 font-medium transition-colors hover:bg-accent"
+                >
+                  {t("home.viewSource")}
+                </a>
+              </div>
+            </div>
+
+            <Specimen
+              caption={t("home.demo.caption")}
+              you={t("home.demo.you")}
+              assistant={t("home.demo.assistant")}
+              question={t("home.demo.question")}
+              answer={t("home.demo.answer")}
+              sourcesLabel={t("home.demo.sourcesLabel")}
+              source1={t("home.demo.source1")}
+              source2={t("home.demo.source2")}
+            />
           </div>
         </section>
 
-        {/* Pipeline */}
-        <section className="border-y bg-secondary/30">
-          <div className="max-w-5xl mx-auto px-4 py-16">
-            <h2 className="text-center text-2xl font-bold mb-2">{t("home.pipeline.title")}</h2>
-            <p className="text-center text-muted-foreground mb-10">{t("home.pipeline.subtitle")}</p>
-            <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {steps.map((step, i) => (
-                <li key={step.key} className="rounded-xl border bg-card p-5">
-                  <div className="flex items-center gap-2 mb-2 text-primary">
-                    <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      {step.icon}
-                    </span>
-                    <span className="text-xs font-mono text-muted-foreground">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold mb-1">{t(`home.pipeline.steps.${step.key}.title`)}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t(`home.pipeline.steps.${step.key}.description`)}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+        <Expedition />
+        <WorldPlate />
+        <Datasheet />
 
-        {/* Corpus + stack */}
-        <section className="max-w-5xl mx-auto px-4 py-16 grid gap-8 lg:grid-cols-2">
-          <div>
-            <h2 className="text-2xl font-bold mb-3">{t("home.corpus.title")}</h2>
-            <p className="text-muted-foreground">{t("home.corpus.body")}</p>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold mb-3">{t("home.stack.title")}</h2>
-            <ul className="space-y-3">
-              {stack.map((item) => (
-                <li key={item.key} className="flex gap-3">
-                  <span className="shrink-0 mt-0.5">{item.icon}</span>
-                  <span>
-                    <span className="font-medium">{t(`home.stack.items.${item.key}.name`)}</span>
-                    <span className="text-muted-foreground">
-                      {" — "}
-                      {t(`home.stack.items.${item.key}.description`)}
+        <section className="border-t border-border">
+          <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+            <h2 className="font-heading text-2xl font-semibold sm:text-3xl">
+              {t("home.tryIt.title")}
+            </h2>
+            <ul className="mt-6 flex flex-col gap-px overflow-hidden rounded-sm border border-border bg-border">
+              {examples.map((q) => (
+                <li key={q}>
+                  <Link
+                    to={`/chat?q=${encodeURIComponent(q)}`}
+                    className="group flex items-center justify-between gap-4 bg-background px-4 py-3.5 transition-colors hover:bg-accent"
+                  >
+                    <span>{q}</span>
+                    <span className="shrink-0 font-mono text-muted-foreground transition-colors group-hover:text-primary">
+                      &rarr;
                     </span>
-                  </span>
+                  </Link>
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-sm text-muted-foreground">{t("home.stack.note")}</p>
-          </div>
-        </section>
-
-        {/* Try it */}
-        <section className="border-t bg-secondary/30">
-          <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-            <h2 className="text-2xl font-bold mb-6">{t("home.tryIt.title")}</h2>
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              {examples.map((q) => (
-                <Link
-                  key={q}
-                  to={`/chat?q=${encodeURIComponent(q)}`}
-                  className="rounded-full border bg-background px-3.5 py-1.5 text-sm hover:bg-muted transition-colors"
-                >
-                  {q}
-                </Link>
-              ))}
-            </div>
             <Link
               to="/chat"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="mt-6 inline-flex items-center gap-2 rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {t("home.openChat")}
-              <ArrowRight className="w-4 h-4" />
+              <Arrow />
             </Link>
           </div>
         </section>
       </main>
 
-      <footer className="border-t">
-        <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-          <span>{t("home.footer")}</span>
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <span className="text-sm text-muted-foreground">{t("home.footer")}</span>
           <a
-            href="https://github.com/CharlesOo0/EasyRag"
+            href={REPO_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+            className="font-mono text-xs tracking-wider text-muted-foreground uppercase transition-colors hover:text-foreground"
           >
-            <Github className="w-4 h-4" />
-            GitHub
+            github.com/CharlesOo0/EasyRag
           </a>
         </div>
       </footer>
     </div>
+  );
+}
+
+/* ================================================================= le tracé
+   The pipeline as a survey traverse: a dashed route and four stations, each
+   with its own mark, dropping to what was collected there. */
+
+const STATIONS = [
+  { x: 125, y: 96 },
+  { x: 375, y: 54 },
+  { x: 625, y: 92 },
+  { x: 875, y: 48 },
+];
+
+const ROUTE =
+  "M 20 108 C 60 102 90 98 125 96 C 210 90 290 62 375 54 C 465 46 545 84 625 92 " +
+  "C 715 101 800 68 875 48 C 915 38 954 26 980 26";
+
+const BAND_W = 1000;
+const BAND_H = 140;
+
+/** A different mark per stage: a passage, a vector, a lens, a citation. */
+function StationGlyph({ step }: { step: number }) {
+  const stroke = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.3,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  if (step === 0) {
+    return <path {...stroke} d="M -4.4 -3.4 L 4.4 -3.4 M -4.4 0 L 4.4 0 M -4.4 3.4 L 1.4 3.4" />;
+  }
+  if (step === 1) {
+    return <path {...stroke} d="M -4.4 4.4 L 3.9 -3.9 M 3.9 -3.9 L -0.4 -3.5 M 3.9 -3.9 L 3.5 0.4" />;
+  }
+  if (step === 2) {
+    return (
+      <g {...stroke}>
+        <circle cx="-1" cy="-1" r="3.4" />
+        <path d="M 1.6 1.6 L 4.8 4.8" />
+      </g>
+    );
+  }
+  return (
+    <path
+      {...stroke}
+      d="M -1.6 -4.4 L -4.4 -4.4 L -4.4 4.4 L -1.6 4.4 M 1.6 -4.4 L 4.4 -4.4 L 4.4 4.4 L 1.6 4.4"
+    />
+  );
+}
+
+function Expedition() {
+  const { t } = useTranslation();
+  const stages = STEP_KEYS.map((key, i) => ({
+    key,
+    n: i + 1,
+    accent: STEP_ACCENT[i],
+    title: t(`home.pipeline.steps.${key}.title`),
+    artifact: t(`home.pipeline.steps.${key}.artifact`),
+    meta: t(`home.pipeline.steps.${key}.meta`),
+  }));
+
+  return (
+    <section className="border-t border-border">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+        <h2 className="font-heading text-2xl font-semibold sm:text-3xl">
+          {t("home.pipeline.title")}
+        </h2>
+        <p className="mt-3 max-w-prose text-muted-foreground">{t("home.pipeline.subtitle")}</p>
+        <p className="mt-8 font-mono text-xs text-muted-foreground">{t("home.pipeline.trace")}</p>
+
+        <svg
+          viewBox={`0 0 ${BAND_W} ${BAND_H}`}
+          className="mt-2 hidden w-full lg:block"
+          aria-hidden="true"
+        >
+          <path d={ROUTE} fill="none" strokeWidth="1.5" strokeDasharray="6 5" className="stroke-border" />
+          <path
+            d="M 969 20.5 L 982 26 L 969 31.5"
+            fill="none"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="stroke-border"
+          />
+          {STATIONS.map((s, i) => (
+            <g key={i} className={STEP_ACCENT[i]}>
+              <line
+                x1={s.x}
+                y1={s.y + 10}
+                x2={s.x}
+                y2={BAND_H}
+                strokeWidth="1"
+                strokeDasharray="3 4"
+                className="stroke-border"
+              />
+              <circle
+                cx={s.x}
+                cy={s.y}
+                r="9"
+                className="fill-background"
+                stroke="currentColor"
+                strokeWidth="1.6"
+              />
+              <g transform={`translate(${s.x} ${s.y})`}>
+                <StationGlyph step={i} />
+              </g>
+            </g>
+          ))}
+        </svg>
+
+        <ol className="mt-8 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:mt-0 lg:grid-cols-4">
+          {stages.map((s) => (
+            <li key={s.key}>
+              <div className="flex items-baseline gap-2">
+                <span className={`font-mono text-xs font-semibold ${s.accent}`}>{s.n}</span>
+                <h3 className="font-heading text-base font-semibold">{s.title}</h3>
+              </div>
+              <p className="mt-2 border-l border-border pl-3 font-mono text-[0.7rem] leading-relaxed break-words text-foreground/75">
+                {s.artifact}
+              </p>
+              <p className="mt-2 font-mono text-[0.7rem] tracking-wide text-muted-foreground">
+                {s.meta}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+/* ==================================================================== la carte
+   The corpus drawn as territory: every country outlined, grouped by region.
+   Pointing at a region — in the legend or on the map — lights it up. */
+
+// True plate carree: both axes at MAP_W / 360 = 2.778 units per degree, so the
+// continents keep their shape. MAP_H is derived, not chosen.
+const MAP_W = 1000;
+const LAT_TOP = 72;
+const LAT_SPAN = 126; // down to -54
+const MAP_H = (LAT_SPAN * MAP_W) / 360; // 350
+
+const project = (lat: number, lon: number) => ({
+  x: ((lon + 180) / 360) * MAP_W,
+  y: ((LAT_TOP - lat) / LAT_SPAN) * MAP_H,
+});
+
+function WorldPlate() {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language === "en" ? "en" : "fr";
+  const [active, setActive] = useState<string | null>(null);
+
+  const counts = new Map<string, number>();
+  for (const c of CORPUS_INDEX) counts.set(c.region, (counts.get(c.region) ?? 0) + 1);
+
+  const meridians = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150];
+  const parallels = [60, 40, 20, 0, -20, -40];
+  const idle = active === null;
+
+  return (
+    <section className="border-t border-border">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+        <h2 className="font-heading text-2xl font-semibold sm:text-3xl">
+          {t("home.corpus.title")}
+        </h2>
+        <p className="mt-3 max-w-prose text-muted-foreground">{t("home.corpus.body")}</p>
+
+        <figure className="m-0 mt-8">
+          <svg
+            viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+            className="w-full"
+            role="img"
+            aria-label={t("home.corpus.mapAlt")}
+          >
+            {/* graticule */}
+            <g className="stroke-border" strokeWidth="0.75" opacity="0.8">
+              {meridians.map((lon) => {
+                const { x } = project(0, lon);
+                return <line key={`m${lon}`} x1={x} y1="0" x2={x} y2={MAP_H} />;
+              })}
+              {parallels.map((lat) => {
+                const { y } = project(lat, 0);
+                return (
+                  <line
+                    key={`p${lat}`}
+                    x1="0"
+                    y1={y}
+                    x2={MAP_W}
+                    y2={y}
+                    strokeWidth={lat === 0 ? "1.1" : "0.75"}
+                  />
+                );
+              })}
+            </g>
+
+            {/* land that is not in the corpus — territories, ice, Antarctica */}
+            <path d={WORLD_CONTEXT} className="fill-foreground/[0.05]" stroke="none" />
+
+            {/* the corpus, by region. Every path stays mounted so hovering only
+                swaps classes - remounting a path this size drops frames. */}
+            {REGION_ORDER.map((region) => {
+              const d = REGION_PATHS[region];
+              if (!d) return null;
+              const on = region === active;
+              return (
+                <path
+                  key={region}
+                  d={d}
+                  onMouseEnter={() => setActive(region)}
+                  onMouseLeave={() => setActive(null)}
+                  strokeWidth={on ? 1.2 : 0.4}
+                  strokeLinejoin="round"
+                  className={
+                    "cursor-pointer transition-all duration-300 " +
+                    (on
+                      ? "fill-primary/75 stroke-primary"
+                      : idle
+                        ? "fill-foreground/[0.13] stroke-foreground/30"
+                        : "fill-foreground/[0.06] stroke-foreground/15")
+                  }
+                />
+              );
+            })}
+
+            {/* states too small to draw */}
+            {TINY_STATES.map((s) => (
+              <circle
+                key={s.slug}
+                cx={s.x}
+                cy={s.y}
+                r={s.region === active ? 3.4 : 2.4}
+                className={
+                  "transition-all duration-300 " +
+                  (s.region === active
+                    ? "fill-primary"
+                    : idle
+                      ? "fill-foreground/45"
+                      : "fill-foreground/20")
+                }
+              />
+            ))}
+
+            {/* frame + degree ticks */}
+            <rect
+              x="0.5"
+              y="0.5"
+              width={MAP_W - 1}
+              height={MAP_H - 1}
+              fill="none"
+              strokeWidth="1"
+              className="stroke-border"
+            />
+            <g className="stroke-foreground/60" strokeWidth="1">
+              {meridians.map((lon) => {
+                const { x } = project(0, lon);
+                return (
+                  <Fragment key={`t${lon}`}>
+                    <line x1={x} y1="0" x2={x} y2="6" />
+                    <line x1={x} y1={MAP_H} x2={x} y2={MAP_H - 6} />
+                  </Fragment>
+                );
+              })}
+              {parallels.map((lat) => {
+                const { y } = project(lat, 0);
+                return (
+                  <Fragment key={`u${lat}`}>
+                    <line x1="0" y1={y} x2="6" y2={y} />
+                    <line x1={MAP_W} y1={y} x2={MAP_W - 6} y2={y} />
+                  </Fragment>
+                );
+              })}
+            </g>
+          </svg>
+          <figcaption className="mt-2 border-t border-border pt-2 font-mono text-[0.7rem] tracking-wide text-muted-foreground">
+            {t("home.corpus.mapCaption")}
+          </figcaption>
+        </figure>
+
+        <ul className="mt-6 grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+          {REGION_ORDER.map((region) => (
+            <li key={region}>
+              <button
+                type="button"
+                onMouseEnter={() => setActive(region)}
+                onMouseLeave={() => setActive(null)}
+                onFocus={() => setActive(region)}
+                onBlur={() => setActive(null)}
+                className={
+                  "flex w-full cursor-pointer items-baseline gap-2 border-b border-border/70 py-1.5 text-left font-mono text-[0.7rem] tracking-wide uppercase transition-colors focus-visible:outline-none " +
+                  (active === region ? "text-primary" : "text-muted-foreground hover:text-foreground")
+                }
+              >
+                <span
+                  className={
+                    "inline-block h-1.5 w-1.5 shrink-0 rounded-full transition-colors " +
+                    (active === region ? "bg-primary" : "bg-foreground/40")
+                  }
+                />
+                <span className="flex-1">{REGION_LABEL[region][lang]}</span>
+                <span className="tabular-nums">{counts.get(region) ?? 0}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/* ==================================================================== la stack
+   Three components, set as a datasheet. */
+
+function Datasheet() {
+  const { t } = useTranslation();
+  return (
+    <section className="border-t border-border">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+        <h2 className="font-heading text-2xl font-semibold sm:text-3xl">
+          {t("home.stack.title")}
+        </h2>
+        <p className="mt-3 max-w-prose text-muted-foreground">{t("home.stack.note")}</p>
+
+        <dl className="mt-8 border-t border-border font-mono text-sm">
+          {STACK_KEYS.map((key) => (
+            <div
+              key={key}
+              className="grid items-baseline gap-x-6 gap-y-0.5 border-b border-border py-3.5 sm:grid-cols-[10rem_13rem_1fr]"
+            >
+              <dt className="text-[0.7rem] tracking-[0.14em] text-muted-foreground uppercase">
+                {t(`home.stack.items.${key}.role`)}
+              </dt>
+              <dd className="text-foreground">{t(`home.stack.items.${key}.name`)}</dd>
+              <dd className="text-muted-foreground">{t(`home.stack.items.${key}.spec`)}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}
+function Specimen({
+  caption,
+  you,
+  assistant,
+  question,
+  answer,
+  sourcesLabel,
+  source1,
+  source2,
+}: Record<
+  "caption" | "you" | "assistant" | "question" | "answer" | "sourcesLabel" | "source1" | "source2",
+  string
+>) {
+  const parts = answer.split(/(\[\d\])/);
+  return (
+    <figure className="m-0 lg:mt-14">
+      <div className="relative space-y-3 border border-border bg-card p-5 text-sm">
+        <CornerTicks />
+        <p className="font-mono text-[0.65rem] tracking-wider text-muted-foreground uppercase">
+          {you}
+        </p>
+        <p className="border-l-2 border-border pl-3">{question}</p>
+        <p className="pt-1 font-mono text-[0.65rem] tracking-wider text-muted-foreground uppercase">
+          {assistant}
+        </p>
+        <p className="leading-relaxed">
+          {parts.map((part, i) =>
+            /^\[\d\]$/.test(part) ? (
+              <span
+                key={i}
+                className="mx-0.5 rounded-[2px] border border-primary bg-primary/10 px-1 text-[0.7rem] font-medium text-primary"
+              >
+                {part.slice(1, -1)}
+              </span>
+            ) : (
+              <span key={i}>{part}</span>
+            ),
+          )}
+        </p>
+        <div className="border-t border-border pt-3">
+          <p className="font-mono text-[0.65rem] tracking-wider text-muted-foreground uppercase">
+            {sourcesLabel}
+          </p>
+          <ul className="mt-1.5 space-y-1 font-mono text-xs text-muted-foreground">
+            <li className="flex justify-between gap-3">
+              <span>
+                <span className="text-primary">[1]</span> {source1}
+              </span>
+              <span className="text-relief">0.84</span>
+            </li>
+            <li className="flex justify-between gap-3">
+              <span>
+                <span className="text-primary">[2]</span> {source2}
+              </span>
+              <span className="text-relief">0.81</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <figcaption className="mt-2 border-t border-border pt-2 font-mono text-[0.7rem] tracking-wide text-muted-foreground">
+        Fig.&nbsp;1 &mdash; {caption}
+      </figcaption>
+    </figure>
+  );
+}
+
+function Arrow() {
+  return (
+    <span aria-hidden="true" className="font-mono">
+      &rarr;
+    </span>
+  );
+}
+
+function CompassMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
+      <path d="M12 7l2.4 5-2.4 5-2.4-5z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function HeroContours() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 -z-10 h-full w-full text-relief opacity-[0.11]"
+      viewBox="0 0 1200 460"
+      preserveAspectRatio="none"
+    >
+      <g fill="none" stroke="currentColor" strokeWidth="1.25">
+        <path d="M-40 90 C 220 30 380 150 620 110 C 860 70 980 180 1240 120" />
+        <path d="M-40 160 C 220 100 380 220 620 180 C 860 140 980 250 1240 190" />
+        <path d="M-40 230 C 220 170 380 290 620 250 C 860 210 980 320 1240 260" />
+        <path d="M-40 300 C 220 240 380 360 620 320 C 860 280 980 390 1240 330" />
+        <path d="M-40 370 C 220 310 380 430 620 390 C 860 350 980 460 1240 400" />
+      </g>
+    </svg>
+  );
+}
+
+function CornerTicks() {
+  const base = "absolute h-2.5 w-2.5 border-primary";
+  return (
+    <span aria-hidden="true">
+      <span className={`${base} -top-px -left-px border-t border-l`} />
+      <span className={`${base} -top-px -right-px border-t border-r`} />
+      <span className={`${base} -bottom-px -left-px border-b border-l`} />
+      <span className={`${base} -right-px -bottom-px border-b border-r`} />
+    </span>
   );
 }
 
