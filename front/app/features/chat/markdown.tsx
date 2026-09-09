@@ -86,3 +86,51 @@ export function Markdown({ children, className }: { children: string; className?
     </div>
   );
 }
+
+/**
+ * The same Markdown, rendered as phrasing content only. Source snippets sit
+ * inside a button, where a `<p>` would be invalid HTML and break hydration, so
+ * every block becomes a `<span>` and only the emphasis survives.
+ */
+const inlineComponents: Components = {
+  p: ({ node, ...props }) => <span {...props} />,
+  h1: ({ node, ...props }) => <span {...props} />,
+  h2: ({ node, ...props }) => <span {...props} />,
+  h3: ({ node, ...props }) => <span {...props} />,
+  h4: ({ node, ...props }) => <span {...props} />,
+  h5: ({ node, ...props }) => <span {...props} />,
+  h6: ({ node, ...props }) => <span {...props} />,
+  ul: ({ node, ...props }) => <span {...props} />,
+  ol: ({ node, ...props }) => <span {...props} />,
+  li: ({ node, ...props }) => <span {...props} />,
+  blockquote: ({ node, ...props }) => <span {...props} />,
+  pre: ({ node, ...props }) => <span {...props} />,
+  table: ({ node, ...props }) => <span {...props} />,
+  thead: ({ node, ...props }) => <span {...props} />,
+  tbody: ({ node, ...props }) => <span {...props} />,
+  tr: ({ node, ...props }) => <span {...props} />,
+  th: ({ node, ...props }) => <span {...props} />,
+  td: ({ node, ...props }) => <span {...props} />,
+  hr: () => null,
+  img: () => null,
+  a: ({ node, ...props }) => <span {...props} />,
+  strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
+  em: ({ node, ...props }) => <em {...props} />,
+  code: ({ node, ...props }) => <code className="font-mono" {...props} />,
+};
+
+export function InlineMarkdown({
+  children,
+  className,
+}: {
+  children: string;
+  className?: string;
+}) {
+  return (
+    <span className={className}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={inlineComponents}>
+        {children}
+      </ReactMarkdown>
+    </span>
+  );
+}
