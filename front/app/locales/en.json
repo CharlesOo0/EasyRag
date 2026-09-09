@@ -27,7 +27,13 @@
       "badRequest": "That question couldn't be processed."
     },
     "sources_one": "{{count}} source",
-    "sources_other": "{{count}} sources"
+    "sources_other": "{{count}} sources",
+    "source": {
+      "close": "Close",
+      "loading": "Loading the document…",
+      "error": "Couldn't load this document.",
+      "viewOriginal": "Original source"
+    }
   },
   "home": {
     "toggleLanguage": "Switch language",
