@@ -185,8 +185,8 @@ export default function Home() {
 }
 
 /* ================================================================= le tracé
-   The pipeline as a plain survey traverse: a dashed route, four stations, and
-   what was collected at each. Hovering a station explains the stage. */
+   The pipeline as a survey traverse: a dashed route and four stations, each
+   with its own mark, dropping to what was collected there. */
 
 const STATIONS = [
   { x: 125, y: 96 },
@@ -197,21 +197,49 @@ const STATIONS = [
 
 const ROUTE =
   "M 20 108 C 60 102 90 98 125 96 C 210 90 290 62 375 54 C 465 46 545 84 625 92 " +
-  "C 715 101 800 68 875 48 C 915 38 950 32 980 26";
+  "C 715 101 800 68 875 48 C 915 38 954 26 980 26";
 
 const BAND_W = 1000;
 const BAND_H = 140;
 
+/** A different mark per stage: a passage, a vector, a lens, a citation. */
+function StationGlyph({ step }: { step: number }) {
+  const stroke = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.3,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  if (step === 0) {
+    return <path {...stroke} d="M -4.4 -3.4 L 4.4 -3.4 M -4.4 0 L 4.4 0 M -4.4 3.4 L 1.4 3.4" />;
+  }
+  if (step === 1) {
+    return <path {...stroke} d="M -4.4 4.4 L 3.9 -3.9 M 3.9 -3.9 L -0.4 -3.5 M 3.9 -3.9 L 3.5 0.4" />;
+  }
+  if (step === 2) {
+    return (
+      <g {...stroke}>
+        <circle cx="-1" cy="-1" r="3.4" />
+        <path d="M 1.6 1.6 L 4.8 4.8" />
+      </g>
+    );
+  }
+  return (
+    <path
+      {...stroke}
+      d="M -1.6 -4.4 L -4.4 -4.4 L -4.4 4.4 L -1.6 4.4 M 1.6 -4.4 L 4.4 -4.4 L 4.4 4.4 L 1.6 4.4"
+    />
+  );
+}
+
 function Expedition() {
   const { t } = useTranslation();
-  const [open, setOpen] = useState<number | null>(null);
-
   const stages = STEP_KEYS.map((key, i) => ({
     key,
     n: i + 1,
     accent: STEP_ACCENT[i],
     title: t(`home.pipeline.steps.${key}.title`),
-    description: t(`home.pipeline.steps.${key}.description`),
     artifact: t(`home.pipeline.steps.${key}.artifact`),
     meta: t(`home.pipeline.steps.${key}.meta`),
   }));
@@ -225,89 +253,45 @@ function Expedition() {
         <p className="mt-3 max-w-prose text-muted-foreground">{t("home.pipeline.subtitle")}</p>
         <p className="mt-8 font-mono text-xs text-muted-foreground">{t("home.pipeline.trace")}</p>
 
-        <div className="relative mt-2 hidden lg:block">
-          <svg
-            viewBox={`0 0 ${BAND_W} ${BAND_H}`}
-            preserveAspectRatio="none"
-            className="h-[140px] w-full"
-            aria-hidden="true"
-          >
-            <path
-              d={ROUTE}
-              fill="none"
-              strokeWidth="1.5"
-              strokeDasharray="6 5"
-              className="stroke-border"
-            />
-            <path
-              d="M 968 30 L 984 24 L 972 16"
-              fill="none"
-              strokeWidth="1.5"
-              className="stroke-border"
-            />
-            {STATIONS.map((s, i) => (
-              <g key={i} className={STEP_ACCENT[i]}>
-                <line
-                  x1={s.x}
-                  y1={s.y + 9}
-                  x2={s.x}
-                  y2={BAND_H}
-                  strokeWidth="1"
-                  strokeDasharray="3 4"
-                  className="stroke-border"
-                />
-                <circle
-                  cx={s.x}
-                  cy={s.y}
-                  r={open === i ? 9 : 7.5}
-                  className="fill-background transition-all"
-                  stroke="currentColor"
-                  strokeWidth={open === i ? 2.2 : 1.6}
-                />
-                <line x1={s.x - 3.5} y1={s.y} x2={s.x + 3.5} y2={s.y} stroke="currentColor" strokeWidth="1.4" />
-                <line x1={s.x} y1={s.y - 3.5} x2={s.x} y2={s.y + 3.5} stroke="currentColor" strokeWidth="1.4" />
-              </g>
-            ))}
-            {STATIONS.map((s, i) => (
+        <svg
+          viewBox={`0 0 ${BAND_W} ${BAND_H}`}
+          className="mt-2 hidden w-full lg:block"
+          aria-hidden="true"
+        >
+          <path d={ROUTE} fill="none" strokeWidth="1.5" strokeDasharray="6 5" className="stroke-border" />
+          <path
+            d="M 969 20.5 L 982 26 L 969 31.5"
+            fill="none"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="stroke-border"
+          />
+          {STATIONS.map((s, i) => (
+            <g key={i} className={STEP_ACCENT[i]}>
+              <line
+                x1={s.x}
+                y1={s.y + 10}
+                x2={s.x}
+                y2={BAND_H}
+                strokeWidth="1"
+                strokeDasharray="3 4"
+                className="stroke-border"
+              />
               <circle
-                key={`hit-${i}`}
                 cx={s.x}
                 cy={s.y}
-                r="26"
-                fill="none"
-                pointerEvents="all"
-                tabIndex={0}
-                role="button"
-                aria-label={stages[i].title}
-                className="cursor-help focus-visible:outline-none"
-                onMouseEnter={() => setOpen(i)}
-                onMouseLeave={() => setOpen(null)}
-                onFocus={() => setOpen(i)}
-                onBlur={() => setOpen(null)}
+                r="9"
+                className="fill-background"
+                stroke="currentColor"
+                strokeWidth="1.6"
               />
-            ))}
-          </svg>
-
-          {open !== null && (
-            <div
-              className="pointer-events-none absolute z-10 w-72 -translate-x-1/2 -translate-y-full rounded-sm border border-border bg-background p-3 shadow-lg"
-              style={{
-                left: `${Math.min(Math.max((STATIONS[open].x / BAND_W) * 100, 15), 85)}%`,
-                top: `${((STATIONS[open].y - 16) / BAND_H) * 100}%`,
-              }}
-            >
-              <p className="flex items-baseline gap-2">
-                <span className={`font-mono text-xs font-semibold ${stages[open].accent}`}>
-                  {stages[open].n}
-                </span>
-                <span className="font-heading text-sm font-semibold">{stages[open].title}</span>
-              </p>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                {stages[open].description}
-              </p>
-            </div>
-          )}
-        </div>
+              <g transform={`translate(${s.x} ${s.y})`}>
+                <StationGlyph step={i} />
+              </g>
+            </g>
+          ))}
+        </svg>
 
         <ol className="mt-8 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:mt-0 lg:grid-cols-4">
           {stages.map((s) => (
