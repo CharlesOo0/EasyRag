@@ -1,158 +1,248 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *));
+/*
+ * EasyRag — "Atlas" visual identity.
+ * The corpus is a reference atlas (the CIA World Factbook), so the UI borrows the
+ * grammar of a printed reference map: a cool bone-white ground, hairline rules
+ * instead of cards, boundary-red for anything the reader can act on or follow,
+ * relief-green for the machine's own readouts, a monospace "instrument" face for
+ * coordinates / similarity scores / token counts. See docs/design-tokens.md.
+ */
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
-
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
-
+/* dark = explicit `.dark` class OR the OS preference (no `.light` override). */
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
   @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+    &:where(:not(.light *):not(.light)) {
+      @slot;
+    }
   }
 }
 
-body {
-  padding: 0;
-  margin: 0;
+@theme {
+  --font-sans: "Spectral", Cambria, "Times New Roman", Georgia, serif;
+  --font-serif: "Spectral", Cambria, "Times New Roman", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
 }
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
+
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Atlas accents — not part of shadcn's set. */
+  --color-relief: var(--relief);
+  --color-relief-foreground: var(--relief-foreground);
+  --color-relief-wash: var(--relief-wash);
+  --color-graticule: var(--graticule);
+
+  /* Pipeline steps: ingest / embed / retrieve / generate (+ spare). */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-
-  @keyframes blob-1 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(100px, 50px) scale(1.2); }
-    66% { transform: translate(-20px, 80px) scale(0.9); }
-  }
-  @keyframes blob-2 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(-80px, 100px) scale(1.1); }
-    66% { transform: translate(40px, -20px) scale(0.95); }
-  }
-  @keyframes blob-3 {
-    0%, 100% { transform: translate(0, 0); }
-    50% { transform: translate(50px, -50px); }
-  }
-
-  --animate-blob-1: none;
-  --animate-blob-2: none;
-  --animate-blob-3: none;
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.75);
+  --radius-4xl: calc(var(--radius) * 3.5);
 }
 
+/*
+ * Light — the resting theme. A cool bone-white ground (not warm cream), ink text
+ * with a faint green bias, hairline rules.
+ */
 :root {
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f3f3ef;
+  --foreground: #1b1e1c;
+  --card: #fbfbf8;
+  --card-foreground: #1b1e1c;
+  --popover: #fbfbf8;
+  --popover-foreground: #1b1e1c;
+
+  --primary: #8f2d2d; /* boundary red — actions, links, citations */
+  --primary-foreground: #f6f2ec;
+  --secondary: #e8e7de;
+  --secondary-foreground: #1b1e1c;
+  --muted: #e8e7de;
+  --muted-foreground: #55594f;
+  --accent: #dde7e2; /* relief-green wash — hover surfaces */
+  --accent-foreground: #173a34;
+  --destructive: #b23b2e; /* semantic error — distinct from boundary red */
+
+  --border: #d5d6cd; /* neatline */
+  --input: #cdcec3;
+  --ring: #1f4e46; /* focus = relief green */
+
+  --relief: #1f4e46; /* relief green — retrieval readouts, scores */
+  --relief-foreground: #f6f2ec;
+  --relief-wash: #dde7e2;
+  --graticule: #a97f27; /* graticule gold — coordinates, ticks */
+
+  --chart-1: #a97f27;
+  --chart-2: #1f4e46;
+  --chart-3: #3a5a7a;
+  --chart-4: #8f2d2d;
+  --chart-5: #6b6f5c;
+
+  --radius: 0.25rem;
+
+  --sidebar: #efeee8;
+  --sidebar-foreground: #1b1e1c;
+  --sidebar-primary: #8f2d2d;
+  --sidebar-primary-foreground: #f6f2ec;
+  --sidebar-accent: #dde7e2;
+  --sidebar-accent-foreground: #173a34;
+  --sidebar-border: #d5d6cd;
+  --sidebar-ring: #1f4e46;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/*
+ * Dark — same roles, darker ground. Boundary red and relief green are lifted so
+ * both stay legible on #141715. Kept in sync with the media-query block below.
+ */
+:root.dark {
+  --background: #141715;
+  --foreground: #e9e9e2;
+  --card: #1c201d;
+  --card-foreground: #e9e9e2;
+  --popover: #1c201d;
+  --popover-foreground: #e9e9e2;
+
+  --primary: #d98a8a;
+  --primary-foreground: #241413;
+  --secondary: #262b27;
+  --secondary-foreground: #e9e9e2;
+  --muted: #262b27;
+  --muted-foreground: #a7aaa2;
+  --accent: #22312c;
+  --accent-foreground: #cfe4dd;
+  --destructive: #e07a5f;
+
+  --border: #313530;
+  --input: #3a3f39;
+  --ring: #7ab8ab;
+
+  --relief: #7ab8ab;
+  --relief-foreground: #10201c;
+  --relief-wash: #22312c;
+  --graticule: #cfa451;
+
+  --chart-1: #cfa451;
+  --chart-2: #7ab8ab;
+  --chart-3: #7fa8cf;
+  --chart-4: #d98a8a;
+  --chart-5: #9a9d88;
+
+  --sidebar: #1c201d;
+  --sidebar-foreground: #e9e9e2;
+  --sidebar-primary: #d98a8a;
+  --sidebar-primary-foreground: #241413;
+  --sidebar-accent: #22312c;
+  --sidebar-accent-foreground: #cfe4dd;
+  --sidebar-border: #313530;
+  --sidebar-ring: #7ab8ab;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #141715;
+    --foreground: #e9e9e2;
+    --card: #1c201d;
+    --card-foreground: #e9e9e2;
+    --popover: #1c201d;
+    --popover-foreground: #e9e9e2;
+
+    --primary: #d98a8a;
+    --primary-foreground: #241413;
+    --secondary: #262b27;
+    --secondary-foreground: #e9e9e2;
+    --muted: #262b27;
+    --muted-foreground: #a7aaa2;
+    --accent: #22312c;
+    --accent-foreground: #cfe4dd;
+    --destructive: #e07a5f;
+
+    --border: #313530;
+    --input: #3a3f39;
+    --ring: #7ab8ab;
+
+    --relief: #7ab8ab;
+    --relief-foreground: #10201c;
+    --relief-wash: #22312c;
+    --graticule: #cfa451;
+
+    --chart-1: #cfa451;
+    --chart-2: #7ab8ab;
+    --chart-3: #7fa8cf;
+    --chart-4: #d98a8a;
+    --chart-5: #9a9d88;
+
+    --sidebar: #1c201d;
+    --sidebar-foreground: #e9e9e2;
+    --sidebar-primary: #d98a8a;
+    --sidebar-primary-foreground: #241413;
+    --sidebar-accent: #22312c;
+    --sidebar-accent-foreground: #cfe4dd;
+    --sidebar-border: #313530;
+    --sidebar-ring: #7ab8ab;
+  }
+}
+
+/* Pre-hydration ground so the first paint is already in-theme. */
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  margin: 0;
+  padding: 0;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+:root.light {
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+  }
 }
 
 @layer base {
@@ -160,9 +250,21 @@ body {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
-  html {
-    @apply font-sans;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    text-wrap: balance;
+  }
+  /* Machine readouts are set in the instrument face. */
+  code,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
   }
 }
