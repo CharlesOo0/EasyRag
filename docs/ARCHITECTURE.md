@@ -4,7 +4,7 @@ EasyRag is a retrieval-augmented-generation demo: a fixed corpus, indexed into
 pgvector, answered by a local LLM that cites its passages. Everything runs
 locally — no external API.
 
-- **Backend** — Django 6 + DRF (`core/`, `apps/rag/`). One public endpoint.
+- **Backend** — Django 6 + DRF (`core/`, `apps/rag/`). Public endpoints: the SSE chat (`POST /api/rag/chat/`) and a read-only corpus API (`GET /api/rag/documents/`, `/<slug>/`).
 - **Frontend** — React Router v8 framework mode (`front/`).
 - **Storage** — PostgreSQL + [pgvector](https://github.com/pgvector/pgvector).
 - **Models** — `sentence-transformers` (`intfloat/multilingual-e5-small`, 384-dim) for embeddings, [Ollama](https://ollama.com) (`llama3.2:3b`) for generation.
@@ -44,12 +44,21 @@ flowchart TD
 5. **`views.ChatView._events`** — emits `event: sources` first (retrieval is done), then `event: token` per token, then `event: done`; an `OllamaError` or retrieval failure becomes `event: error` (terminal).
 6. **Frontend** — `features/chat/api.streamChat` parses the SSE by hand (`EventSource` can't POST) and resolves with a `StreamResult` (`done` / `aborted` / `incomplete` / `error{kind}`). `features/chat/hooks.useChat` owns the message list and the send / stop / retry lifecycle. `features/chat/message.MessageBubble` renders the streamed text, turns `[n]` markers into buttons that scroll to the matching `SourceCard`.
 
+## Corpus API
+
+Read-only, public, throttled (`rag_read`, 120/min per IP). Feeds the source viewer and the corpus browser.
+
+- **`GET /api/rag/documents/`** — `DocumentListView`: the whole corpus, unpaginated (195 rows), each `{slug, title, metadata}`. `slug` is `source_path` without the `.md` suffix.
+- **`GET /api/rag/documents/<slug>/`** — `DocumentDetailView`: adds `body`, the raw Markdown (frontmatter stripped) stored on `Document.body` at ingest time. 404 for an unknown slug.
+
+The chat `sources` event carries the same `slug`, so a citation links straight to its document.
+
 ## Ingestion path
 
 `manage.py ingest_corpus` (also run by the `bootstrap` compose service):
 
 1. `services/corpus.iter_corpus` walks `corpus/*.md`, `parse_document` extracts YAML frontmatter (`title` + arbitrary metadata) and computes a sha256 of the normalised text.
-2. A `Document` whose `source_path` + `content_hash` are unchanged is skipped; otherwise its chunks are dropped and it's re-processed.
+2. A `Document` whose `source_path` + `content_hash` are unchanged **and** already has its `body` stored is skipped; otherwise its chunks are dropped and it's re-processed. (The `body` check backfills documents ingested before that column existed.)
 3. `services/chunking.chunk_document` splits the body on `##` / `###` headings (never merging across one), packs each section into `RAG_CHUNK_TOKENS`-ish windows with `RAG_CHUNK_OVERLAP`, and records the heading path per chunk.
 4. `services/embeddings.embed_texts` embeds each chunk as `passage: <heading path>\n\n<content>` — the heading path is what tells the model the chunk is about e.g. *Nepal > Geography* when the text itself never says so.
 5. `Chunk` rows are `bulk_create`d with their `vector(384)` embedding. The HNSW cosine index (`rag/migrations/0002`) is created on PostgreSQL only.
@@ -61,7 +70,7 @@ Swapping corpora: replace the files under `corpus/` (see [`corpus-format.md`](co
 | Area | File |
 |---|---|
 | Models | `apps/rag/models.py` — `Document`, `Chunk` (pgvector `VectorField`) |
-| Migrations | `0001_initial` (VectorExtension + tables), `0002` (HNSW index) |
+| Migrations | `0001_initial` (VectorExtension + tables), `0002` (HNSW index), `0003` (`Document.body`) |
 | Corpus reading | `apps/rag/services/corpus.py` |
 | Chunking | `apps/rag/services/chunking.py` |
 | Embeddings | `apps/rag/services/embeddings.py` (lazy model, preloaded via `core/wsgi.py`) |
