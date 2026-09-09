@@ -40,8 +40,19 @@
     "openChat": "Open the chat",
     "viewSource": "Source on GitHub",
     "hero": {
+      "eyebrow": "RAG demo · 100% local",
       "title": "A RAG you can watch work",
       "subtitle": "A fixed corpus, indexed into pgvector, answered by a local model that cites its sources. No API keys, no login."
+    },
+    "demo": {
+      "caption": "Sample",
+      "you": "You",
+      "assistant": "EasyRag",
+      "question": "What is the terrain of Nepal?",
+      "answer": "Nepal runs south to north: the Tarai plain, a hill region, then the Himalayas [1] — Mount Everest tops out at 8,849 m [2].",
+      "sourcesLabel": "Sources",
+      "source1": "Nepal · Geography",
+      "source2": "Nepal · Geography"
     },
     "pipeline": {
       "title": "How it works",
@@ -49,24 +60,29 @@
       "steps": {
         "ingest": {
           "title": "Ingest",
-          "description": "195 country profiles are split into short, heading-anchored passages."
+          "description": "195 country profiles are split into short, heading-anchored passages.",
+          "meta": "195 files → passages"
         },
         "embed": {
           "title": "Embed",
-          "description": "Each passage becomes a 384-dim vector with a local multilingual model."
+          "description": "Each passage becomes a 384-dim vector with a local multilingual model.",
+          "meta": "vectors · 384 dimensions"
         },
         "retrieve": {
           "title": "Retrieve",
-          "description": "Your question is matched against every passage by cosine similarity in pgvector."
+          "description": "Your question is matched against every passage by cosine similarity in pgvector.",
+          "meta": "nearest-k · cosine"
         },
         "generate": {
           "title": "Generate",
-          "description": "A local model answers from the top passages and cites them by number."
+          "description": "A local model answers from the top passages and cites them by number.",
+          "meta": "cited answer [n]"
         }
       }
     },
     "corpus": {
       "title": "The corpus",
+      "statLabel": "country profiles",
       "body": "195 sovereign-country profiles from the CIA World Factbook — public domain, shipped with the repo. It's fixed: there is no upload, no account. Swapping in a different corpus is one command."
     },
     "stack": {

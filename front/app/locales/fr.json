@@ -40,8 +40,19 @@
     "openChat": "Ouvrir le chat",
     "viewSource": "Code sur GitHub",
     "hero": {
+      "eyebrow": "Démo RAG · 100 % local",
       "title": "Un RAG qu'on voit fonctionner",
       "subtitle": "Un corpus figé, indexé dans pgvector, interrogé par un modèle local qui cite ses sources. Sans clé API, sans compte."
+    },
+    "demo": {
+      "caption": "Exemple",
+      "you": "Vous",
+      "assistant": "EasyRag",
+      "question": "Quel est le terrain du Népal ?",
+      "answer": "Le Népal s'étage du sud au nord : la plaine du Teraï, une région de collines, puis les reliefs de l'Himalaya [1] — le mont Everest y culmine à 8 849 m [2].",
+      "sourcesLabel": "Sources",
+      "source1": "Népal · Géographie",
+      "source2": "Népal · Géographie"
     },
     "pipeline": {
       "title": "Comment ça marche",
@@ -49,24 +60,29 @@
       "steps": {
         "ingest": {
           "title": "Ingestion",
-          "description": "195 fiches pays découpées en passages courts, ancrés à leur section."
+          "description": "195 fiches pays découpées en passages courts, ancrés à leur section.",
+          "meta": "195 fichiers → passages"
         },
         "embed": {
           "title": "Vectorisation",
-          "description": "Chaque passage devient un vecteur de 384 dimensions via un modèle multilingue local."
+          "description": "Chaque passage devient un vecteur de 384 dimensions via un modèle multilingue local.",
+          "meta": "vecteurs · 384 dimensions"
         },
         "retrieve": {
           "title": "Recherche",
-          "description": "La question est comparée à chaque passage par similarité cosine dans pgvector."
+          "description": "La question est comparée à chaque passage par similarité cosine dans pgvector.",
+          "meta": "k plus proches · cosine"
         },
         "generate": {
           "title": "Génération",
-          "description": "Un modèle local répond à partir des meilleurs passages et les cite par numéro."
+          "description": "Un modèle local répond à partir des meilleurs passages et les cite par numéro.",
+          "meta": "réponse citée [n]"
         }
       }
     },
     "corpus": {
       "title": "Le corpus",
+      "statLabel": "fiches pays",
       "body": "195 fiches de pays souverains du CIA World Factbook — domaine public, livrées avec le dépôt. Il est figé : pas d'upload, pas de compte. Changer de corpus tient en une commande."
     },
     "stack": {
