@@ -62,21 +62,25 @@
       "steps": {
         "ingest": {
           "title": "Ingestion",
+          "description": "195 fiches pays découpées en passages courts, ancrés à leur section.",
           "meta": "195 fichiers → passages",
           "artifact": "Terrain: Tarai or flat river plain of the Ganges in south, central hill region, rugged Himalayas in north"
         },
         "embed": {
           "title": "Vectorisation",
+          "description": "Chaque passage devient un vecteur de 384 dimensions via un modèle multilingue local.",
           "meta": "passage → vecteur 384-d",
           "artifact": "[ 0.018, −0.114, 0.267, −0.041, 0.152, … ]  ·  L2"
         },
         "retrieve": {
           "title": "Recherche",
+          "description": "La question est comparée à chaque passage par similarité cosine dans pgvector.",
           "meta": "k plus proches · cosine",
           "artifact": "Nepal › Geography          sim 0.84"
         },
         "generate": {
           "title": "Génération",
+          "description": "Un modèle local répond à partir des meilleurs passages et les cite par numéro.",
           "meta": "réponse citée [n]",
           "artifact": "« …puis les reliefs de l'Himalaya [1] — le mont Everest y culmine à 8 849 m [2]. »"
         }

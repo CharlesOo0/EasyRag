@@ -62,21 +62,25 @@
       "steps": {
         "ingest": {
           "title": "Ingest",
+          "description": "195 country profiles are split into short, heading-anchored passages.",
           "meta": "195 files → passages",
           "artifact": "Terrain: Tarai or flat river plain of the Ganges in south, central hill region, rugged Himalayas in north"
         },
         "embed": {
           "title": "Embed",
+          "description": "Each passage becomes a 384-dimension vector with a local multilingual model.",
           "meta": "passage → 384-d vector",
           "artifact": "[ 0.018, −0.114, 0.267, −0.041, 0.152, … ]  ·  L2"
         },
         "retrieve": {
           "title": "Retrieve",
+          "description": "Your question is matched against every passage by cosine similarity in pgvector.",
           "meta": "nearest-k · cosine",
           "artifact": "Nepal › Geography          sim 0.84"
         },
         "generate": {
           "title": "Generate",
+          "description": "A local model answers from the top passages and cites them by number.",
           "meta": "cited answer [n]",
           "artifact": "\"…then the Himalayas [1] — Mount Everest tops out at 8,849 m [2].\""
         }
