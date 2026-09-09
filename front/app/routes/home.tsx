@@ -318,10 +318,12 @@ function Expedition() {
    Every profile plotted at its real Factbook coordinates over Natural Earth
    coastlines. Hovering a region in the legend lights up its countries. */
 
+// True plate carree: both axes at MAP_W / 360 = 2.778 units per degree, so the
+// continents keep their shape. MAP_H is derived, not chosen.
 const MAP_W = 1000;
-const MAP_H = 380;
 const LAT_TOP = 72;
-const LAT_SPAN = 122; // down to -50
+const LAT_SPAN = 126; // down to -54
+const MAP_H = (LAT_SPAN * MAP_W) / 360; // 350
 
 const project = (lat: number, lon: number) => ({
   x: ((lon + 180) / 360) * MAP_W,
