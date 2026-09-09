@@ -24,14 +24,17 @@
 }
 
 @theme {
+  /* Body / reading surface — a quiet serif. */
   --font-sans: "Spectral", Cambria, "Times New Roman", Georgia, serif;
   --font-serif: "Spectral", Cambria, "Times New Roman", Georgia, serif;
+  /* Display — Fraunces, run with its SOFT + WONK axes for a hand-cut feel. */
+  --font-display: "Fraunces", "Spectral", Cambria, Georgia, serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
     monospace;
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-display);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -267,6 +270,20 @@ body {
   samp {
     font-family: var(--font-mono);
   }
+}
+
+/* Fraunces character: optical sizing tracks font-size, terminals softened a
+   touch, wonky alternates on. Applies to headings and anything using the
+   `font-heading` utility. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-heading {
+  font-optical-sizing: auto;
+  font-variation-settings: "SOFT" 24, "WONK" 1;
 }
 
 /* Transient highlight on the passage a chat citation points at (source viewer). */
