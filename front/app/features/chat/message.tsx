@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { ExternalLink, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useSourceViewer } from "./source-viewer";
@@ -7,14 +6,18 @@ import type { ChatMessage, ChatSource, StreamErrorKind } from "./types";
 
 const CITATION_RE = /\[(\d+)\]/g;
 
-export function MessageBubble({
+/** One turn of the consultation: a speaker label, the text, and — for an
+ * answer — the plates it was read from. */
+export function MessageTurn({
   message,
   onRetry,
   canRetry,
+  showRule,
 }: {
   message: ChatMessage;
   onRetry: () => void;
   canRetry: boolean;
+  showRule: boolean;
 }) {
   const { t } = useTranslation();
   const { open } = useSourceViewer();
@@ -30,72 +33,72 @@ export function MessageBubble({
   const showSources = !isUser && !message.streaming && sources.length > 0;
 
   return (
-    <div className={isUser ? "flex justify-end" : "flex justify-start"}>
-      <div
-        className={
-          "rounded-2xl px-4 py-2.5 text-sm max-w-[85%] " +
-          (isUser ? "bg-primary text-primary-foreground" : "bg-secondary")
-        }
-      >
-        <div className="whitespace-pre-wrap">
-          {isUser
-            ? message.content
-            : renderWithCitations(
-                message.content,
-                sources,
-                (source) => open(source),
-                (n) => t("chat.citation", { n }),
-              )}
+    <article className={showRule ? "border-t border-border pt-7" : undefined}>
+      <p className="font-mono text-[0.65rem] tracking-[0.14em] text-muted-foreground uppercase">
+        {isUser ? t("chat.you") : t("chat.assistant")}
+      </p>
+
+      {isUser ? (
+        <p className="mt-2 border-l-2 border-primary/50 pl-3 whitespace-pre-wrap">
+          {message.content}
+        </p>
+      ) : (
+        <div className="mt-2 leading-relaxed whitespace-pre-wrap">
+          {renderWithCitations(
+            message.content,
+            sources,
+            (source) => open(source),
+            (n) => t("chat.citation", { n }),
+          )}
           {message.streaming && message.content && (
-            <span className="ml-0.5 animate-pulse">▋</span>
+            <span className="ml-0.5 animate-pulse text-primary">▋</span>
           )}
         </div>
+      )}
 
-        {message.streaming && !message.content && (
-          <span className="text-muted-foreground">{t("chat.thinking")}</span>
-        )}
-        {message.stopped && (
-          <span className="ml-1 text-muted-foreground text-xs">{t("chat.stopped")}</span>
-        )}
-        {message.incomplete && (
-          <p className="mt-1 text-muted-foreground text-xs">{t("chat.incomplete")}</p>
-        )}
-        {isEmptyDone && (
-          <span className="text-muted-foreground">{t("chat.emptyResponse")}</span>
-        )}
-        {message.error && (
-          <p className="mt-1 text-destructive text-xs">{t(errorKey(message.error.kind))}</p>
-        )}
+      {message.streaming && !message.content && (
+        <p className="mt-2 font-mono text-xs text-muted-foreground">
+          {t("chat.thinking")}
+          <span className="animate-pulse">…</span>
+        </p>
+      )}
+      {message.stopped && (
+        <p className="mt-2 font-mono text-xs text-muted-foreground">{t("chat.stopped")}</p>
+      )}
+      {message.incomplete && (
+        <p className="mt-2 font-mono text-xs text-muted-foreground">{t("chat.incomplete")}</p>
+      )}
+      {isEmptyDone && (
+        <p className="mt-2 font-mono text-xs text-muted-foreground">{t("chat.emptyResponse")}</p>
+      )}
+      {message.error && (
+        <p className="mt-2 font-mono text-xs text-destructive">{t(errorKey(message.error.kind))}</p>
+      )}
 
-        {showRetry && (
-          <button
-            onClick={onRetry}
-            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <RotateCcw className="w-3 h-3" />
-            {t("chat.retry")}
-          </button>
-        )}
+      {showRetry && (
+        <button
+          onClick={onRetry}
+          className="mt-3 cursor-pointer font-mono text-xs tracking-wide text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+        >
+          &#8635; {t("chat.retry")}
+        </button>
+      )}
 
-        {showSources && (
-          <div className="mt-3">
-            <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-              {t("chat.sources", { count: sources.length })}
-            </p>
-            <div className="space-y-2">
-              {sources.map((source, index) => (
-                <SourceCard
-                  key={index}
-                  index={index}
-                  source={source}
-                  onOpen={() => open(source)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      {showSources && (
+        <div className="mt-5 border-t border-border pt-3">
+          <p className="font-mono text-[0.65rem] tracking-[0.14em] text-muted-foreground uppercase">
+            {t("chat.sources", { count: sources.length })}
+          </p>
+          <ul className="mt-1">
+            {sources.map((source, index) => (
+              <li key={index} className="border-b border-border/60 last:border-b-0">
+                <SourceEntry index={index} source={source} onOpen={() => open(source)} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -124,7 +127,7 @@ function renderWithCitations(
         type="button"
         onClick={() => onOpen(sources[n - 1])}
         title={titleFor(n)}
-        className="mx-0.5 rounded bg-primary/10 px-1 align-baseline text-[0.7rem] font-medium text-primary hover:bg-primary/20"
+        className="mx-0.5 cursor-pointer rounded-[2px] border border-primary bg-primary/10 px-1 align-baseline font-mono text-[0.7rem] font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
       >
         {n}
       </button>,
@@ -136,7 +139,7 @@ function renderWithCitations(
   return nodes.length ? nodes : content;
 }
 
-function SourceCard({
+function SourceEntry({
   index,
   source,
   onOpen,
@@ -146,39 +149,51 @@ function SourceCard({
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
-  const percent = Math.round(source.similarity * 100);
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="block w-full rounded-lg border border-border bg-background/50 p-2.5 text-left text-xs transition-colors hover:border-primary/50 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="group block w-full cursor-pointer px-1 py-2.5 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="font-medium text-foreground">
-          <span className="text-primary">[{index + 1}]</span> {source.title}
+      <span className="flex items-baseline justify-between gap-3">
+        <span className="min-w-0 font-mono text-xs">
+          <span className="text-primary">[{index + 1}]</span>{" "}
+          <span className="text-foreground group-hover:text-primary">{source.heading_path}</span>
         </span>
-        <span className="shrink-0 text-muted-foreground" title={t("chat.similarity")}>
-          {percent}%
+        <span
+          className="shrink-0 font-mono text-xs text-relief tabular-nums"
+          title={t("chat.similarity")}
+        >
+          {source.similarity.toFixed(2)}
         </span>
-      </div>
-      <p className="mt-0.5 text-muted-foreground">{source.heading_path}</p>
-      <p className="mt-1 line-clamp-3 text-muted-foreground">{source.snippet}</p>
-      {source.source_url && (
-        <span className="mt-1 inline-flex items-center gap-1 text-primary">
-          {hostOf(source.source_url)}
-          <ExternalLink className="w-3 h-3" />
-        </span>
-      )}
+      </span>
+      <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
+        {cleanSnippet(source.snippet)}
+      </span>
     </button>
   );
 }
 
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return "source";
-  }
+/** The Factbook chunks carry their Markdown emphasis and a few HTML entities
+ * from the source JSON. The side panel renders them properly; a one-line
+ * snippet reads better stripped. */
+const ENTITIES: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+  aacute: "á", eacute: "é", iacute: "í", oacute: "ó", uacute: "ú",
+  agrave: "à", egrave: "è", igrave: "ì", ograve: "ò", ugrave: "ù",
+  acirc: "â", ecirc: "ê", icirc: "î", ocirc: "ô", ucirc: "û",
+  atilde: "ã", otilde: "õ", ntilde: "ñ", ccedil: "ç",
+  auml: "ä", euml: "ë", iuml: "ï", ouml: "ö", uuml: "ü",
+  aring: "å", oslash: "ø", aelig: "æ", szlig: "ß",
+};
+
+function cleanSnippet(text: string): string {
+  return text
+    .replace(/\*\*/g, "")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&([a-zA-Z]+);/g, (whole, name: string) => ENTITIES[name.toLowerCase()] ?? whole)
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function errorKey(kind: StreamErrorKind): string {
