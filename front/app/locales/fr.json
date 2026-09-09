@@ -27,7 +27,13 @@
       "badRequest": "Cette question n'a pas pu être traitée."
     },
     "sources_one": "{{count}} source",
-    "sources_other": "{{count}} sources"
+    "sources_other": "{{count}} sources",
+    "source": {
+      "close": "Fermer",
+      "loading": "Chargement du document…",
+      "error": "Impossible de charger ce document.",
+      "viewOriginal": "Source d'origine"
+    }
   },
   "home": {
     "toggleLanguage": "Changer de langue",

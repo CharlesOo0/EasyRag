@@ -268,3 +268,16 @@ body {
     font-family: var(--font-mono);
   }
 }
+
+/* Transient highlight on the passage a chat citation points at (source viewer). */
+.cited-passage {
+  background-color: var(--relief-wash);
+  box-shadow: -0.4rem 0 0 var(--relief-wash), 0.4rem 0 0 var(--relief-wash);
+  border-radius: 1px;
+  transition: background-color 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cited-passage {
+    transition: none;
+  }
+}

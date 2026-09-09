@@ -3,11 +3,21 @@ export type ChatRole = "user" | "assistant";
 export type ChatTurn = { role: ChatRole; content: string };
 
 export interface ChatSource {
+  /** URL-facing id of the source document (`GET /api/rag/documents/<slug>/`). */
+  slug: string;
   title: string;
   heading_path: string;
   snippet: string;
   similarity: number;
   source_url: string;
+}
+
+/** A full corpus document from `GET /api/rag/documents/<slug>/`. */
+export interface CorpusDocument {
+  slug: string;
+  title: string;
+  metadata: Record<string, unknown>;
+  body: string;
 }
 
 /** A decoded Server-Sent Event from POST /api/rag/chat/. `sources` and `token`
