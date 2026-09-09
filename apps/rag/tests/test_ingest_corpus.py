@@ -68,6 +68,25 @@ class IngestCorpusTests(TestCase):
         self.assertEqual(france.metadata, {"source_url": "https://example.org/fr", "tags": ["country", "europe"]})
         self.assertTrue(france.chunks.exists())
 
+    def test_document_body_is_stored(self, _embed):
+        self.run_ingest()
+        france = Document.objects.get(source_path="france.md")
+        self.assertIn("## Geography", france.body)
+        self.assertIn("semi-presidential republic", france.body)
+        self.assertNotIn("title: France", france.body)  # frontmatter stripped
+
+    def test_missing_body_is_backfilled_without_touching_content_hash(self, embed):
+        self.run_ingest()
+        Document.objects.filter(source_path="france.md").update(body="")
+        embed.reset_mock()
+
+        output = self.run_ingest()
+
+        self.assertTrue(Document.objects.get(source_path="france.md").body)
+        self.assertIn("updated  france.md", output)
+        self.assertIn("1 unchanged", output)  # chad still skipped
+        embed.assert_called_once()
+
     def test_chunks_are_embedded(self, _embed):
         self.run_ingest()
         chunk = Chunk.objects.first()

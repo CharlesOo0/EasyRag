@@ -62,6 +62,7 @@ class ChatViewTests(APITestCase):
         self.assertEqual([name for name, _ in events], ["sources", "token", "token", "done"])
 
         src = events[0][1][0]
+        self.assertEqual(src["slug"], "p")
         self.assertEqual(src["title"], "Brazil")
         self.assertEqual(src["heading_path"], "Brazil > People and Society")
         self.assertEqual(src["similarity"], 0.74)

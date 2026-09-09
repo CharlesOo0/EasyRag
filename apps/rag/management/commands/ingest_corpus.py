@@ -48,16 +48,20 @@ class Command(BaseCommand):
             removed, _ = Document.objects.all().delete()
             self.stdout.write(f"reset: removed {removed} rows")
 
-        existing = {d.source_path: d.content_hash for d in Document.objects.all()}
+        existing = {
+            d.source_path: (d.content_hash, bool(d.body))
+            for d in Document.objects.all()
+        }
         seen: set[str] = set()
         created = updated = skipped = 0
 
         for doc in documents:
             seen.add(doc.source_path)
+            prev = existing.get(doc.source_path)
             unchanged = (
                 not reset
-                and doc.source_path in existing
-                and existing[doc.source_path] == doc.content_hash
+                and prev is not None
+                and prev == (doc.content_hash, True)  # same content, body already stored
             )
             if unchanged:
                 skipped += 1
@@ -104,6 +108,7 @@ class Command(BaseCommand):
                 source_path=doc.source_path,
                 defaults={
                     "title": doc.title,
+                    "body": doc.body,
                     "content_hash": doc.content_hash,
                     "metadata": doc.metadata,
                 },

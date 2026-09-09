@@ -17,13 +17,20 @@ import json
 import logging
 
 from django.http import StreamingHttpResponse
+from django.shortcuts import get_object_or_404
+from rest_framework import generics
 from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.rag.serializers import ChatRequestSerializer
+from apps.rag.models import Document
+from apps.rag.serializers import (
+    ChatRequestSerializer,
+    DocumentDetailSerializer,
+    DocumentListSerializer,
+)
 from apps.rag.services import llm, prompt, retrieval
 from apps.rag.services.llm import OllamaError
 
@@ -49,6 +56,7 @@ def _sse(event: str, data) -> str:
 
 def _source(hit) -> dict:
     return {
+        "slug": hit.document.slug,
         "title": hit.document.title,
         "heading_path": hit.chunk.heading_path,
         "snippet": hit.chunk.content[:SNIPPET_CHARS],
@@ -104,3 +112,26 @@ class ChatView(APIView):
             return
 
         yield _sse("done", {})
+
+
+class DocumentListView(generics.ListAPIView):
+    """GET /api/rag/documents/ - the whole ingested corpus (195 rows, unpaginated)."""
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+    throttle_scope = "rag_read"
+    pagination_class = None
+    serializer_class = DocumentListSerializer
+    queryset = Document.objects.all()
+
+
+class DocumentDetailView(generics.RetrieveAPIView):
+    """GET /api/rag/documents/<slug>/ - one document with its raw Markdown body."""
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+    throttle_scope = "rag_read"
+    serializer_class = DocumentDetailSerializer
+
+    def get_object(self):
+        return get_object_or_404(Document, source_path=f"{self.kwargs['slug']}.md")
