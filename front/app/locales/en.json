@@ -93,20 +93,20 @@
       "mapCaption": "Survey — 195 countries plotted at the coordinates on their own profile. Hover a region."
     },
     "stack": {
-      "title": "The vessel",
+      "title": "The stack",
       "items": {
         "store": {
-          "part": "The hold",
+          "role": "Vector store",
           "name": "pgvector · PostgreSQL 16",
           "spec": "cosine · HNSW index · 384-d"
         },
         "embed": {
-          "part": "The sextant",
+          "role": "Embeddings",
           "name": "multilingual-e5-small",
           "spec": "sentence-transformers · CPU"
         },
         "llm": {
-          "part": "The log",
+          "role": "Generation",
           "name": "Ollama · llama3.2:3b",
           "spec": "/api/chat · streamed"
         }

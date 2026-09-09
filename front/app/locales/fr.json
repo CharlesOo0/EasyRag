@@ -93,20 +93,20 @@
       "mapCaption": "Relevé — 195 pays placés aux coordonnées de leur fiche. Survolez une région."
     },
     "stack": {
-      "title": "Le navire",
+      "title": "La stack",
       "items": {
         "store": {
-          "part": "La cale",
+          "role": "Magasin vectoriel",
           "name": "pgvector · PostgreSQL 16",
           "spec": "cosine · index HNSW · 384-d"
         },
         "embed": {
-          "part": "Le sextant",
+          "role": "Embeddings",
           "name": "multilingual-e5-small",
           "spec": "sentence-transformers · CPU"
         },
         "llm": {
-          "part": "Le journal de bord",
+          "role": "Génération",
           "name": "Ollama · llama3.2:3b",
           "spec": "/api/chat · streamé"
         }
