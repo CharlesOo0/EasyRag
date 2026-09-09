@@ -1,6 +1,7 @@
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { ReactNode } from "react";
 
+import { InlineMarkdown } from "./markdown";
 import { useSourceViewer } from "./source-viewer";
 import type { ChatMessage, ChatSource, StreamErrorKind } from "./types";
 
@@ -21,6 +22,7 @@ export function MessageTurn({
 }) {
   const { t } = useTranslation();
   const { open } = useSourceViewer();
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   const isUser = message.role === "user";
   const sources = message.sources ?? [];
 
@@ -86,16 +88,33 @@ export function MessageTurn({
 
       {showSources && (
         <div className="mt-5 border-t border-border pt-3">
-          <p className="font-mono text-[0.65rem] tracking-[0.14em] text-muted-foreground uppercase">
+          <button
+            type="button"
+            onClick={() => setSourcesOpen((v) => !v)}
+            aria-expanded={sourcesOpen}
+            className="flex cursor-pointer items-center gap-2 font-mono text-[0.65rem] tracking-[0.14em] text-muted-foreground uppercase transition-colors hover:text-foreground"
+          >
+            <span
+              aria-hidden="true"
+              className={
+                "inline-block transition-transform duration-200 " +
+                (sourcesOpen ? "rotate-90" : "")
+              }
+            >
+              &#9656;
+            </span>
             {t("chat.sources", { count: sources.length })}
-          </p>
-          <ul className="mt-1">
-            {sources.map((source, index) => (
-              <li key={index} className="border-b border-border/60 last:border-b-0">
-                <SourceEntry index={index} source={source} onOpen={() => open(source)} />
-              </li>
-            ))}
-          </ul>
+          </button>
+
+          {sourcesOpen && (
+            <ul className="mt-1">
+              {sources.map((source, index) => (
+                <li key={index} className="border-b border-border/60 last:border-b-0">
+                  <SourceEntry index={index} source={source} onOpen={() => open(source)} />
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </article>
@@ -167,16 +186,17 @@ function SourceEntry({
           {source.similarity.toFixed(2)}
         </span>
       </span>
-      <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
-        {cleanSnippet(source.snippet)}
-      </span>
+      <InlineMarkdown className="mt-1 line-clamp-3 block text-xs leading-snug text-muted-foreground [&_strong]:text-foreground/80">
+        {snippetMarkdown(source.snippet)}
+      </InlineMarkdown>
     </button>
   );
 }
 
-/** The Factbook chunks carry their Markdown emphasis and a few HTML entities
- * from the source JSON. The side panel renders them properly; a one-line
- * snippet reads better stripped. */
+/** The Factbook chunks arrive as one long line — the chunker joins on spaces —
+ * carrying their Markdown emphasis and a few HTML entities from the source
+ * JSON. Decode the entities and turn the flattened list dashes into middots so
+ * the preview renders as prose; the emphasis is left for the renderer. */
 const ENTITIES: Record<string, string> = {
   amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
   aacute: "á", eacute: "é", iacute: "í", oacute: "ó", uacute: "ú",
@@ -187,13 +207,20 @@ const ENTITIES: Record<string, string> = {
   aring: "å", oslash: "ø", aelig: "æ", szlig: "ß",
 };
 
-function cleanSnippet(text: string): string {
-  return text
-    .replace(/\*\*/g, "")
+function snippetMarkdown(text: string): string {
+  const cleaned = text
     .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
     .replace(/&([a-zA-Z]+);/g, (whole, name: string) => ENTITIES[name.toLowerCase()] ?? whole)
+    .replace(/\s+-\s+/g, " · ")
     .replace(/\s+/g, " ")
     .trim();
+
+  // The snippet is a fixed slice of the chunk, so it can end mid-emphasis and
+  // leave an unpaired `**` that would render literally. Drop the last one.
+  const marks = cleaned.match(/\*\*/g)?.length ?? 0;
+  if (marks % 2 === 0) return cleaned;
+  const last = cleaned.lastIndexOf("**");
+  return (cleaned.slice(0, last) + cleaned.slice(last + 2)).trim();
 }
 
 function errorKey(kind: StreamErrorKind): string {
