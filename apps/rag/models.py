@@ -16,6 +16,11 @@ class Document(models.Model):
         help_text="Path of the source file, relative to the corpus directory.",
     )
     title = models.CharField(max_length=512)
+    body = models.TextField(
+        blank=True,
+        default="",
+        help_text="Raw Markdown of the document (frontmatter removed), served by the corpus API.",
+    )
     content_hash = models.CharField(
         max_length=64,
         help_text="sha256 of the raw file contents; used to skip re-ingesting unchanged documents.",
@@ -29,6 +34,12 @@ class Document(models.Model):
 
     def __str__(self):
         return self.title or self.source_path
+
+    @property
+    def slug(self) -> str:
+        """URL-facing id: the source path without its `.md` suffix."""
+        path = self.source_path
+        return path[:-3] if path.endswith(".md") else path
 
 
 class Chunk(models.Model):
