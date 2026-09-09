@@ -57,6 +57,7 @@
     "pipeline": {
       "title": "How it works",
       "subtitle": "Four steps, all on the machine it runs on. Here is one piece of data passing through them.",
+      "mapAlt": "Route map: the landing, the archive, the survey peak, the compass rose, and the X that marks the answer.",
       "trace": "Trace — corpus/nepal.md · Geography",
       "steps": {
         "ingest": {

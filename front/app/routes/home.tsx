@@ -184,19 +184,26 @@ export default function Home() {
 }
 
 /* =============================================================== l'itinéraire
-   The pipeline drawn as a survey traverse: a dashed route, four stations, and
-   what was collected at each. */
+   The pipeline drawn as a treasure map: a dotted trail from the landing point,
+   past the archive and the survey peak and the rose, to the X. */
 
-const STATIONS = [
-  { x: 125, y: 100 },
-  { x: 375, y: 58 },
-  { x: 625, y: 96 },
-  { x: 875, y: 52 },
+const TRAIL =
+  "M 80 320 C 102 338 132 300 154 322 C 164 322 170 318 178 316 " +
+  "C 216 310 236 274 244 250 " +
+  "C 252 226 288 214 320 224 C 352 234 372 226 396 208 C 404 202 410 198 415 195 " +
+  "C 452 168 484 190 496 226 C 508 262 548 268 578 258 C 610 248 630 272 648 294 " +
+  "C 651 297 653 299 655 300 C 700 322 748 306 782 268 C 812 234 842 176 878 132";
+
+const COAST = "M 12 250 C 80 262 120 300 150 336 C 182 374 240 400 310 416 C 360 428 400 432 434 436";
+const COAST_2 = "M 12 274 C 74 288 112 324 142 358 C 172 392 226 416 292 432";
+const COAST_3 = "M 12 296 C 68 312 104 344 132 376 C 158 404 200 424 250 436";
+
+const MARKS = [
+  { x: 150, y: 292 },
+  { x: 384, y: 162 },
+  { x: 618, y: 264 },
+  { x: 844, y: 98 },
 ];
-
-const ROUTE =
-  "M 20 112 C 60 106 90 102 125 100 C 210 94 290 66 375 58 C 465 50 545 88 625 96 " +
-  "C 715 105 800 72 875 52 C 915 42 950 36 980 30";
 
 function Expedition() {
   const { t } = useTranslation();
@@ -219,38 +226,186 @@ function Expedition() {
         <p className="mt-8 font-mono text-xs text-muted-foreground">{t("home.pipeline.trace")}</p>
 
         <svg
-          viewBox="0 0 1000 150"
-          preserveAspectRatio="none"
-          className="mt-2 hidden h-[150px] w-full lg:block"
-          aria-hidden="true"
+          viewBox="0 0 1000 440"
+          className="mt-3 hidden w-full md:block"
+          role="img"
+          aria-label={t("home.pipeline.mapAlt")}
         >
+          <defs>
+            <clipPath id="expedition-plate">
+              <rect x="12" y="12" width="976" height="416" />
+            </clipPath>
+          </defs>
+
+          {/* the plate */}
+          <rect x="4" y="4" width="992" height="432" className="fill-card stroke-border" strokeWidth="1" />
+          <rect x="12" y="12" width="976" height="416" fill="none" className="stroke-border" strokeWidth="0.7" />
+
+          {/* rhumb lines radiating from the rose, portolan-style */}
+          <g clipPath="url(#expedition-plate)" className="stroke-foreground/10" strokeWidth="0.6">
+            {Array.from({ length: 16 }, (_, i) => {
+              const a = (i * 22.5 * Math.PI) / 180;
+              return (
+                <line
+                  key={i}
+                  x1={655}
+                  y1={300}
+                  x2={655 + 1300 * Math.cos(a)}
+                  y2={300 + 1300 * Math.sin(a)}
+                />
+              );
+            })}
+          </g>
+
+          {/* inland relief */}
+          <g clipPath="url(#expedition-plate)" fill="none" className="stroke-foreground/30" strokeWidth="0.9">
+            <path d="M 62 148 L 104 96 L 140 148 Z M 122 148 L 156 108 L 186 148 Z M 168 148 L 196 116 L 222 148 Z" className="fill-card" />
+            <path d="M 104 96 L 96 118 M 104 96 L 114 118 M 156 108 L 150 126 M 156 108 L 164 126" strokeWidth="0.5" />
+            <path d="M 806 362 L 836 326 L 862 362 Z M 852 362 L 878 332 L 902 362 Z" className="fill-card" />
+          </g>
+
+          {/* scale bar */}
+          <g className="stroke-foreground/50" strokeWidth="0.9">
+            <path d="M 782 404 L 782 396 M 782 400 L 934 400 M 934 404 L 934 396" fill="none" />
+            <rect x="782" y="397" width="38" height="6" className="fill-foreground/50" stroke="none" />
+            <rect x="858" y="397" width="38" height="6" className="fill-foreground/50" stroke="none" />
+          </g>
+
+          {/* sea, coast and its hachures */}
+          <g fill="none" className="stroke-foreground/45" strokeWidth="1.1">
+            <path d={COAST} />
+          </g>
+          <g fill="none" className="stroke-foreground/20" strokeWidth="0.8">
+            <path d={COAST_2} />
+            <path d={COAST_3} />
+          </g>
+          <g fill="none" className="stroke-foreground/25" strokeWidth="0.9">
+            <path d="M 60 388 q 10 -7 20 0 M 96 412 q 10 -7 20 0 M 150 424 q 10 -7 20 0 M 40 350 q 10 -7 20 0" />
+          </g>
+
+          {/* sea serpent */}
+          <g fill="none" className="stroke-foreground/45" strokeWidth="1.4">
+            <path d="M 168 408 q 16 -20 32 0 q 16 -20 32 0" />
+            <path d="M 232 408 q 13 -8 22 -19 q 6 -8 16 -4" />
+            <path d="M 270 385 l 9 -3 l -4 8 Z" className="fill-foreground/45" />
+            <circle cx="266" cy="386" r="1.6" className="fill-foreground/45" stroke="none" />
+          </g>
+
+          {/* forests */}
+          <g fill="none" className="stroke-foreground/30" strokeWidth="0.9">
+            {[
+              [286, 152],
+              [300, 162],
+              [314, 150],
+              [520, 112],
+              [536, 122],
+              [552, 110],
+              [730, 204],
+              [746, 214],
+              [566, 356],
+              [582, 348],
+              [346, 356],
+              [362, 366],
+              [900, 236],
+              [916, 246],
+            ].map(([x, y]) => (
+              <g key={`${x}-${y}`} transform={`translate(${x} ${y})`}>
+                <path d="M 0 6 L 0 0" />
+                <path d="M -6 0 L 0 -13 L 6 0 Z" className="fill-card" />
+              </g>
+            ))}
+          </g>
+
+          {/* the trail */}
           <path
-            d={ROUTE}
+            d={TRAIL}
             fill="none"
-            strokeWidth="1.5"
-            strokeDasharray="6 5"
-            className="stroke-border"
+            className="stroke-foreground/65"
+            strokeWidth="2.6"
+            strokeDasharray="1.5 9"
+            strokeLinecap="round"
           />
-          <path d="M 968 34 L 984 28 L 972 20" fill="none" strokeWidth="1.5" className="stroke-border" />
-          {STATIONS.map((s, i) => (
+
+          {/* the landing ship */}
+          <g transform="translate(80 320)" className="stroke-foreground" strokeWidth="1.2" fill="none">
+            <path d="M -19 4 Q 0 17 19 2 Q 0 9 -19 4 Z" className="fill-card" />
+            <path d="M 0 3 L 0 -21" />
+            <path d="M 1 -19 L 15 -11 L 1 -5 Z" className="fill-background" />
+          </g>
+
+          {/* 1 — the archive */}
+          <g transform="translate(178 316)" className="stroke-foreground" strokeWidth="1.1" fill="none">
+            <path d="M -19 9 L 19 9" />
+            <path d="M -14 9 L -14 -5 M -7 9 L -7 -5 M 0 9 L 0 -5 M 7 9 L 7 -5 M 14 9 L 14 -5" strokeWidth="0.9" />
+            <path d="M -19 -5 L 19 -5" />
+            <path d="M -20 -5 L 0 -20 L 20 -5 Z" className="fill-card" />
+          </g>
+
+          {/* 2 — the survey peak */}
+          <g transform="translate(415 195)" className="stroke-foreground" strokeWidth="1.1" fill="none">
+            <path d="M 2 16 L 22 -6 L 38 16 Z" className="fill-card" />
+            <path d="M -32 16 L -8 -16 L 14 16 Z" className="fill-card" />
+            <path d="M -8 -16 L -13 -3 M -8 -16 L -3 -3 M -8 -16 L -20 6 M -8 -16 L 4 6" strokeWidth="0.55" />
+            <path d="M -8 -16 L -8 -30" />
+            <path d="M -8 -30 L 5 -26 L -8 -22 Z" className="fill-primary" stroke="none" />
+          </g>
+
+          {/* 3 — the compass rose */}
+          <g transform="translate(655 300)" className="stroke-foreground" fill="none">
+            <circle r="31" strokeWidth="0.9" className="fill-card" />
+            <circle r="22" strokeWidth="0.55" />
+            <path d="M -15 -15 L 3 -3 L 15 15 L -3 3 Z" strokeWidth="0.7" />
+            <path d="M 15 -15 L 3 3 L -15 15 L -3 -3 Z" strokeWidth="0.7" />
+            <path d="M -31 0 L 0 5 L 31 0 L 0 -5 Z" strokeWidth="0.9" />
+            <path d="M 0 -31 L 5 0 L 0 31 L -5 0 Z" strokeWidth="0.9" />
+            <path d="M 0 -31 L 5 0 L 0 0 Z" className="fill-foreground" stroke="none" />
+            <circle r="2.4" className="fill-foreground" stroke="none" />
+          </g>
+
+          {/* 4 — X marks the spot */}
+          <g transform="translate(878 132)">
+            <circle r="27" fill="none" className="stroke-primary" strokeWidth="0.8" strokeDasharray="3 4" />
+            <path
+              d="M -15 -15 L 15 15 M 15 -15 L -15 15"
+              className="stroke-primary"
+              strokeWidth="3.6"
+              strokeLinecap="round"
+            />
+          </g>
+
+          {/* station numbers */}
+          {MARKS.map((m, i) => (
             <g key={i} className={STEP_ACCENT[i]}>
-              <line
-                x1={s.x}
-                y1={s.y + 9}
-                x2={s.x}
-                y2={150}
-                strokeWidth="1"
-                strokeDasharray="3 4"
-                className="stroke-border"
-              />
-              <circle cx={s.x} cy={s.y} r="7.5" className="fill-background" stroke="currentColor" strokeWidth="1.6" />
-              <line x1={s.x - 3.5} y1={s.y} x2={s.x + 3.5} y2={s.y} stroke="currentColor" strokeWidth="1.4" />
-              <line x1={s.x} y1={s.y - 3.5} x2={s.x} y2={s.y + 3.5} stroke="currentColor" strokeWidth="1.4" />
+              <circle cx={m.x} cy={m.y} r="9.5" className="fill-background" stroke="currentColor" strokeWidth="1.4" />
+              <text
+                x={m.x}
+                y={m.y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize="11"
+                fontWeight="600"
+                className="fill-current font-mono"
+              >
+                {i + 1}
+              </text>
             </g>
           ))}
+
+          {/* landmark labels */}
+          <g
+            className="fill-muted-foreground font-mono"
+            fontSize="11"
+            letterSpacing="1"
+            textAnchor="middle"
+          >
+            <text x="178" y="356">{stages[0].title}</text>
+            <text x="415" y="242">{stages[1].title}</text>
+            <text x="655" y="358">{stages[2].title}</text>
+            <text x="878" y="188">{stages[3].title}</text>
+          </g>
         </svg>
 
-        <ol className="mt-6 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:mt-0 lg:grid-cols-4">
+        <ol className="mt-8 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
           {stages.map((s) => (
             <li key={s.key}>
               <div className="flex items-baseline gap-2">

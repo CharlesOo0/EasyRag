@@ -57,6 +57,7 @@
     "pipeline": {
       "title": "Comment ça marche",
       "subtitle": "Quatre étapes, entièrement sur la machine qui l'exécute. Voici une même donnée qui les traverse.",
+      "mapAlt": "Carte de l'itinéraire : le débarquement, l'archive, le pic de relevé, la rose des vents, et la croix qui marque la réponse.",
       "trace": "Trace — corpus/nepal.md · Geography",
       "steps": {
         "ingest": {
