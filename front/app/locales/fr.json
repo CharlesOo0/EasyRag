@@ -90,7 +90,7 @@
       "title": "Le corpus",
       "body": "Les 195 pays souverains du CIA World Factbook — domaine public, livrés avec le dépôt. Figé : pas d'upload, pas de compte. Changer de corpus tient en une commande.",
       "mapAlt": "Carte des 195 pays du corpus, placés à leurs coordonnées géographiques.",
-      "mapCaption": "Relevé — 195 pays placés aux coordonnées de leur fiche. Survolez une région."
+      "mapCaption": "Relevé — 195 pays aux coordonnées de leur propre fiche. Les plus petits États insulaires sont trop petits pour être dessinés au trait. Survolez une région."
     },
     "stack": {
       "title": "La stack",
