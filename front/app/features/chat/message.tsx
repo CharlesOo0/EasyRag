@@ -1,11 +1,11 @@
-import { forwardRef, useCallback, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ExternalLink, RotateCcw } from "lucide-react";
+import type { ReactNode } from "react";
 
+import { useSourceViewer } from "./source-viewer";
 import type { ChatMessage, ChatSource, StreamErrorKind } from "./types";
 
 const CITATION_RE = /\[(\d+)\]/g;
-const HIGHLIGHT_MS = 1600;
 
 export function MessageBubble({
   message,
@@ -17,22 +17,9 @@ export function MessageBubble({
   canRetry: boolean;
 }) {
   const { t } = useTranslation();
+  const { open } = useSourceViewer();
   const isUser = message.role === "user";
   const sources = message.sources ?? [];
-
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [highlighted, setHighlighted] = useState<number | null>(null);
-
-  const jumpToSource = useCallback((n: number) => {
-    const el = cardRefs.current[n - 1];
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    setHighlighted(n - 1);
-    window.setTimeout(
-      () => setHighlighted((current) => (current === n - 1 ? null : current)),
-      HIGHLIGHT_MS,
-    );
-  }, []);
 
   const isEmptyDone =
     !isUser && !message.streaming && !message.content && !message.error && !message.stopped;
@@ -53,8 +40,11 @@ export function MessageBubble({
         <div className="whitespace-pre-wrap">
           {isUser
             ? message.content
-            : renderWithCitations(message.content, sources.length, jumpToSource, (n) =>
-                t("chat.citation", { n }),
+            : renderWithCitations(
+                message.content,
+                sources,
+                (source) => open(source),
+                (n) => t("chat.citation", { n }),
               )}
           {message.streaming && message.content && (
             <span className="ml-0.5 animate-pulse">▋</span>
@@ -96,12 +86,9 @@ export function MessageBubble({
               {sources.map((source, index) => (
                 <SourceCard
                   key={index}
-                  ref={(el) => {
-                    cardRefs.current[index] = el;
-                  }}
                   index={index}
                   source={source}
-                  highlighted={highlighted === index}
+                  onOpen={() => open(source)}
                 />
               ))}
             </div>
@@ -112,11 +99,12 @@ export function MessageBubble({
   );
 }
 
-/** Turn `[1]` / `[2]` markers that point at a real source into buttons. */
+/** Turn `[1]` / `[2]` markers that point at a real source into buttons that open
+ * that source in the viewer panel. */
 function renderWithCitations(
   content: string,
-  sourceCount: number,
-  onJump: (n: number) => void,
+  sources: ChatSource[],
+  onOpen: (source: ChatSource) => void,
   titleFor: (n: number) => string,
 ): ReactNode {
   const nodes: ReactNode[] = [];
@@ -127,14 +115,14 @@ function renderWithCitations(
   let match: RegExpExecArray | null;
   while ((match = CITATION_RE.exec(content)) !== null) {
     const n = Number(match[1]);
-    if (n < 1 || n > sourceCount) continue; // out of range: leave as plain text
+    if (n < 1 || n > sources.length) continue; // out of range: leave as plain text
 
     if (match.index > cursor) nodes.push(content.slice(cursor, match.index));
     nodes.push(
       <button
         key={`cite-${key++}`}
         type="button"
-        onClick={() => onJump(n)}
+        onClick={() => onOpen(sources[n - 1])}
         title={titleFor(n)}
         className="mx-0.5 rounded bg-primary/10 px-1 align-baseline text-[0.7rem] font-medium text-primary hover:bg-primary/20"
       >
@@ -148,19 +136,22 @@ function renderWithCitations(
   return nodes.length ? nodes : content;
 }
 
-const SourceCard = forwardRef<
-  HTMLDivElement,
-  { index: number; source: ChatSource; highlighted: boolean }
->(({ index, source, highlighted }, ref) => {
+function SourceCard({
+  index,
+  source,
+  onOpen,
+}: {
+  index: number;
+  source: ChatSource;
+  onOpen: () => void;
+}) {
   const { t } = useTranslation();
   const percent = Math.round(source.similarity * 100);
   return (
-    <div
-      ref={ref}
-      className={
-        "rounded-lg border p-2.5 text-xs transition-colors " +
-        (highlighted ? "border-primary bg-primary/5" : "border-border bg-background/50")
-      }
+    <button
+      type="button"
+      onClick={onOpen}
+      className="block w-full rounded-lg border border-border bg-background/50 p-2.5 text-left text-xs transition-colors hover:border-primary/50 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <div className="flex items-start justify-between gap-2">
         <span className="font-medium text-foreground">
@@ -173,20 +164,14 @@ const SourceCard = forwardRef<
       <p className="mt-0.5 text-muted-foreground">{source.heading_path}</p>
       <p className="mt-1 line-clamp-3 text-muted-foreground">{source.snippet}</p>
       {source.source_url && (
-        <a
-          href={source.source_url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-1 inline-flex items-center gap-1 text-primary hover:underline"
-        >
+        <span className="mt-1 inline-flex items-center gap-1 text-primary">
           {hostOf(source.source_url)}
           <ExternalLink className="w-3 h-3" />
-        </a>
+        </span>
       )}
-    </div>
+    </button>
   );
-});
-SourceCard.displayName = "SourceCard";
+}
 
 function hostOf(url: string): string {
   try {
