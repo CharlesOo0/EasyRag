@@ -148,8 +148,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "DEFAULT_THROTTLE_CLASSES": ("rest_framework.throttling.ScopedRateThrottle",),
     "DEFAULT_THROTTLE_RATES": {
-        # Public RAG chat endpoint (apps/rag/views.py).
+        # Public RAG endpoints (apps/rag/views.py): chat is expensive, the
+        # read-only corpus API is cheap.
         "rag_chat": "20/min",
+        "rag_read": "120/min",
     },
 }
 
