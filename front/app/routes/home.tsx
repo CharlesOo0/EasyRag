@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { CompassMark, Contours } from "~/components/marks";
 import { CORPUS_INDEX } from "~/data/corpus-index";
+import { regionLabel, REGION_ORDER } from "~/features/corpus/regions";
 import { REGION_PATHS, TINY_STATES, WORLD_CONTEXT } from "~/data/world-regions";
 
 export function meta() {
@@ -23,34 +24,6 @@ const REPO_URL = "https://github.com/CharlesOo0/EasyRag";
 
 const STEP_ACCENT = ["text-chart-1", "text-chart-2", "text-chart-3", "text-chart-4"];
 
-const REGION_ORDER = [
-  "africa",
-  "europe",
-  "east-n-southeast-asia",
-  "central-america-n-caribbean",
-  "middle-east",
-  "australia-oceania",
-  "south-america",
-  "central-asia",
-  "south-asia",
-  "north-america",
-] as const;
-
-const REGION_LABEL: Record<string, { fr: string; en: string }> = {
-  africa: { fr: "Afrique", en: "Africa" },
-  europe: { fr: "Europe", en: "Europe" },
-  "east-n-southeast-asia": { fr: "Asie de l'Est & du Sud-Est", en: "East & Southeast Asia" },
-  "central-america-n-caribbean": {
-    fr: "Amérique centrale & Caraïbes",
-    en: "Central America & Caribbean",
-  },
-  "middle-east": { fr: "Moyen-Orient", en: "Middle East" },
-  "australia-oceania": { fr: "Australie & Océanie", en: "Australia & Oceania" },
-  "south-america": { fr: "Amérique du Sud", en: "South America" },
-  "central-asia": { fr: "Asie centrale", en: "Central Asia" },
-  "south-asia": { fr: "Asie du Sud", en: "South Asia" },
-  "north-america": { fr: "Amérique du Nord", en: "North America" },
-};
 
 export default function Home() {
   const { t, i18n } = useTranslation();
@@ -67,7 +40,13 @@ export default function Home() {
               Easy<span className="text-primary">Rag</span>
             </span>
           </span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/corpus"
+              className="hidden font-mono text-xs tracking-wide text-muted-foreground transition-colors hover:text-foreground sm:block"
+            >
+              {t("home.viewCorpus")}
+            </Link>
             <button
               onClick={() => i18n.changeLanguage(other)}
               className="cursor-pointer rounded-sm border border-transparent px-2 py-1.5 font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -482,12 +461,20 @@ function WorldPlate() {
                     (active === region ? "bg-primary" : "bg-foreground/40")
                   }
                 />
-                <span className="flex-1">{REGION_LABEL[region][lang]}</span>
+                <span className="flex-1">{regionLabel(region, lang)}</span>
                 <span className="tabular-nums">{counts.get(region) ?? 0}</span>
               </button>
             </li>
           ))}
         </ul>
+
+        <Link
+          to="/corpus"
+          className="mt-6 inline-flex items-center gap-2 font-mono text-xs tracking-wide text-primary hover:underline"
+        >
+          {t("home.corpus.browse")}
+          <Arrow />
+        </Link>
       </div>
     </section>
   );

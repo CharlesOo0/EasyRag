@@ -71,7 +71,13 @@ function Conversation() {
           {t("chat.title")}
         </span>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/corpus"
+            className="hidden font-mono text-xs tracking-wide text-muted-foreground transition-colors hover:text-foreground sm:block"
+          >
+            {t("chat.viewCorpus")}
+          </Link>
           <button
             onClick={() => i18n.changeLanguage(other)}
             className="cursor-pointer rounded-sm border border-transparent px-2 py-1 font-mono text-xs tracking-widest text-muted-foreground uppercase transition-colors hover:border-border hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
