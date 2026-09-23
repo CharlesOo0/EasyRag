@@ -76,6 +76,39 @@ for a low-traffic showcase, not for load.
 replace `stream_chat` — it's ~40 lines, one function, and the only Ollama-aware
 code. Everything upstream (`retrieval`, `prompt`) and the SSE view are unchanged.
 
+## Public API — no login, so the limits matter
+
+The chat endpoint has no auth in front of it by design. Three things bound how
+much damage one client (or one bad actor) can do:
+
+- **`RAG_CHAT_THROTTLE`** (default `10/min`) / **`RAG_READ_THROTTLE`**
+  (`120/min`) — per-IP request rate, via DRF's `ScopedRateThrottle`.
+- **`RAG_MAX_CONCURRENT_CHATS`** (default `4`) — caps how many answers can be
+  generating at once; past that the server returns `503` immediately instead
+  of queueing the connection silently. This is a **per-process** limit (a
+  plain `threading.Semaphore`), which is why the image ships with
+  `gunicorn --workers 1` — running more workers would give each its own
+  counter instead of one shared cap.
+- **`RAG_MAX_TOKENS`** (default `600`) — passed to Ollama as `num_predict`, so
+  one answer can't run generation out to the model's own limit and tie up a
+  worker for the full `OLLAMA_READ_TIMEOUT`.
+
+**The per-IP throttle trusts `X-Forwarded-For`.** Behind a reverse proxy, that
+header must be the proxy's own view of the client IP, not whatever the client
+sent — if your proxy forwards the client's header unchecked, throttling is
+trivial to bypass by setting it yourself. Every proxy in the "simplest path"
+list (Caddy, nginx, Traefik) sets this correctly by default when it's the
+first hop from the internet; only a problem if there's another untrusted
+proxy in front of *that*.
+
+Before exposing this publicly, also run:
+
+```bash
+python manage.py check --deploy   # Django's own production checklist
+pip-audit                          # backend dependencies
+cd front && npm audit              # frontend dependencies
+```
+
 ## Environment variables
 
 | Variable | Prod value |
@@ -90,6 +123,9 @@ code. Everything upstream (`retrieval`, `prompt`) and the SSE view are unchanged
 | `USE_X_FORWARDED_PROTO` | `True` behind a TLS proxy |
 | `OLLAMA_URL` | the Ollama server |
 | `RAG_LLM_MODEL` | model to pull / use (default `llama3.2:3b`) |
+| `RAG_MAX_TOKENS` | cap on one answer's length (default `600`) |
+| `RAG_MAX_CONCURRENT_CHATS` | cap on simultaneous generations (default `4`) |
+| `RAG_CHAT_THROTTLE` / `RAG_READ_THROTTLE` | per-IP request rate (default `10/min` / `120/min`) |
 
 The `RAG_*` retrieval knobs (see [ARCHITECTURE.md](ARCHITECTURE.md)) rarely need
 changing in prod.
