@@ -9,7 +9,7 @@
     "hint": "↵ send · ⇧↵ new line",
     "send": "Send",
     "stop": "Stop",
-    "thinking": "Searching the corpus…",
+    "thinking": "Searching the corpus",
     "intro": "EasyRag answers from a fixed corpus of 195 country profiles (CIA World Factbook), citing its sources. Try one of these:",
     "emptyEyebrow": "Consult the corpus",
     "examples": [

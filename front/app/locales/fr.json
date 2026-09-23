@@ -9,7 +9,7 @@
     "hint": "↵ envoyer · ⇧↵ nouvelle ligne",
     "send": "Envoyer",
     "stop": "Arrêter",
-    "thinking": "Recherche dans le corpus…",
+    "thinking": "Recherche dans le corpus",
     "intro": "EasyRag répond à partir d'un corpus figé de 195 fiches pays (CIA World Factbook), en citant ses sources. Essayez :",
     "emptyEyebrow": "Consultation du corpus",
     "examples": [

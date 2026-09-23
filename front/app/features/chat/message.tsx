@@ -58,12 +58,7 @@ export function MessageTurn({
         </div>
       )}
 
-      {message.streaming && !message.content && (
-        <p className="mt-2 font-mono text-xs text-muted-foreground">
-          {t("chat.thinking")}
-          <span className="animate-pulse">…</span>
-        </p>
-      )}
+      {message.streaming && !message.content && <SearchingIndicator label={t("chat.thinking")} />}
       {message.stopped && (
         <p className="mt-2 font-mono text-xs text-muted-foreground">{t("chat.stopped")}</p>
       )}
@@ -221,6 +216,37 @@ function snippetMarkdown(text: string): string {
   if (marks % 2 === 0) return cleaned;
   const last = cleaned.lastIndexOf("**");
   return (cleaned.slice(0, last) + cleaned.slice(last + 2)).trim();
+}
+
+/** Retrieval in progress: a compass-rose sweep (the instrument reading the
+ * corpus) plus a staggered ellipsis, in place of a static "thinking" line. */
+function SearchingIndicator({ label }: { label: string }) {
+  return (
+    <p className="mt-2 flex items-center gap-2 font-mono text-xs text-muted-foreground">
+      <SearchingGlyph />
+      {label}
+      <span aria-hidden="true" className="inline-flex">
+        <span className="dot-fade">.</span>
+        <span className="dot-fade [animation-delay:0.2s]">.</span>
+        <span className="dot-fade [animation-delay:0.4s]">.</span>
+      </span>
+    </p>
+  );
+}
+
+function SearchingGlyph() {
+  return (
+    <span className="relative inline-flex h-3.5 w-3.5 shrink-0 text-relief" aria-hidden="true">
+      <span className="absolute inset-0 animate-ping rounded-full bg-relief/25 motion-reduce:animate-none" />
+      <svg viewBox="0 0 16 16" className="relative h-3.5 w-3.5">
+        <circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.45" />
+        <g className="searching-sweep">
+          <line x1="8" y1="8" x2="8" y2="2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        </g>
+        <circle cx="8" cy="8" r="1" fill="currentColor" />
+      </svg>
+    </span>
+  );
 }
 
 function errorKey(kind: StreamErrorKind): string {

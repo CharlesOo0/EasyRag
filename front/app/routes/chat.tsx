@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 
+import { CompassMark, Contours } from "~/components/marks";
 import { EmptyState } from "~/features/chat/empty-state";
 import { MessageTurn } from "~/features/chat/message";
 import { SourcePanel, SourceViewerProvider } from "~/features/chat/source-viewer";
@@ -14,7 +15,8 @@ export function meta() {
 export default function ChatRoute() {
   return (
     <SourceViewerProvider>
-      <div className="h-screen bg-background p-3 text-foreground sm:p-5 lg:p-6">
+      <div className="relative isolate h-screen overflow-hidden bg-background p-3 text-foreground sm:p-5 lg:p-6">
+        <Contours />
         <div className="mx-auto flex h-full max-w-6xl overflow-hidden rounded-sm border border-border bg-card">
           <Conversation />
           <SourcePanel />
@@ -156,22 +158,5 @@ function Conversation() {
         </form>
       </div>
     </div>
-  );
-}
-
-function CompassMark({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
-      <path d="M12 7l2.4 5-2.4 5-2.4-5z" fill="currentColor" stroke="none" />
-    </svg>
   );
 }
