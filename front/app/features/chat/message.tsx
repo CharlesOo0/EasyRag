@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { InlineMarkdown } from "./markdown";
+import { InlineMarkdown } from "~/features/corpus/markdown";
 import { useSourceViewer } from "./source-viewer";
 import type { ChatMessage, ChatSource, StreamErrorKind } from "./types";
 

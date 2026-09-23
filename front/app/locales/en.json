@@ -3,6 +3,7 @@
     "title": "Ask the corpus",
     "back": "Home",
     "toggleLanguage": "Switch language",
+    "viewCorpus": "Corpus",
     "you": "You",
     "assistant": "EasyRag",
     "placeholder": "Ask a question about the countries in the corpus…",
@@ -41,6 +42,7 @@
   },
   "home": {
     "toggleLanguage": "Switch language",
+    "viewCorpus": "Corpus",
     "openChat": "Open the chat",
     "viewSource": "Source on GitHub",
     "hero": {
@@ -94,7 +96,8 @@
       "title": "The corpus",
       "body": "All 195 sovereign countries from the CIA World Factbook — public domain, shipped with the repo. Fixed: no upload, no account. Swapping in a different corpus is one command.",
       "mapAlt": "Map of the 195 corpus countries, outlined and grouped by region.",
-      "mapCaption": "The 195 corpus countries, outlined and grouped by region. Hover a region; micro-states show as a mark."
+      "mapCaption": "The 195 corpus countries, outlined and grouped by region. Hover a region; micro-states show as a mark.",
+      "browse": "Browse the corpus"
     },
     "stack": {
       "title": "The stack",
@@ -126,5 +129,31 @@
       ]
     },
     "footer": "MIT licensed. Corpus is public domain (U.S. Government work)."
+  },
+  "corpus": {
+    "toggleLanguage": "Switch language",
+    "openChat": "Open the chat",
+    "backToList": "Corpus",
+    "eyebrow": "The corpus",
+    "title": "Browse the corpus",
+    "subtitle": "The 195 country profiles the answers are read from. Search by name or filter by region.",
+    "searchPlaceholder": "Search a country…",
+    "allRegions": "All",
+    "count_one": "{{count}} profile",
+    "count_other": "{{count}} profiles",
+    "loading": "Loading the corpus…",
+    "loadError": "Couldn't load the corpus.",
+    "retry": "Retry",
+    "noResults": "No results.",
+    "noResultsFor": "No results for \"{{query}}\".",
+    "footer": "MIT licensed. Corpus is public domain (U.S. Government work).",
+    "detail": {
+      "loading": "Loading the profile…",
+      "eyebrow": "Country profile",
+      "viewOriginal": "Original source",
+      "errorEyebrow": "Error",
+      "errorTitle": "Couldn't display this profile",
+      "errorBody": "The document may not exist, or the server may be unreachable."
+    }
   }
 }

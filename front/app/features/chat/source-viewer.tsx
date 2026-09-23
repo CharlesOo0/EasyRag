@@ -9,9 +9,11 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { fetchDocument } from "./documents";
-import { Markdown } from "./markdown";
-import type { ChatSource, CorpusDocument } from "./types";
+import { fetchDocument } from "~/features/corpus/api";
+import { Markdown } from "~/features/corpus/markdown";
+import type { CorpusDocument } from "~/features/corpus/types";
+
+import type { ChatSource } from "./types";
 
 const HIGHLIGHT_MS = 2600;
 

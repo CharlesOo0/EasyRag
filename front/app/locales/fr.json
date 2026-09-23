@@ -3,6 +3,7 @@
     "title": "Interroger le corpus",
     "back": "Accueil",
     "toggleLanguage": "Changer de langue",
+    "viewCorpus": "Corpus",
     "you": "Vous",
     "assistant": "EasyRag",
     "placeholder": "Posez une question sur les pays du corpus…",
@@ -41,6 +42,7 @@
   },
   "home": {
     "toggleLanguage": "Changer de langue",
+    "viewCorpus": "Corpus",
     "openChat": "Ouvrir le chat",
     "viewSource": "Code sur GitHub",
     "hero": {
@@ -94,7 +96,8 @@
       "title": "Le corpus",
       "body": "Les 195 pays souverains du CIA World Factbook — domaine public, livrés avec le dépôt. Figé : pas d'upload, pas de compte. Changer de corpus tient en une commande.",
       "mapAlt": "Carte des 195 pays du corpus, détourés et groupés par région.",
-      "mapCaption": "Les 195 pays du corpus, détourés et groupés par région. Survolez une région ; les micro-États apparaissent en repère."
+      "mapCaption": "Les 195 pays du corpus, détourés et groupés par région. Survolez une région ; les micro-États apparaissent en repère.",
+      "browse": "Parcourir le corpus"
     },
     "stack": {
       "title": "La stack",
@@ -126,5 +129,31 @@
       ]
     },
     "footer": "Sous licence MIT. Corpus dans le domaine public (œuvre du gouvernement américain)."
+  },
+  "corpus": {
+    "toggleLanguage": "Changer de langue",
+    "openChat": "Ouvrir le chat",
+    "backToList": "Corpus",
+    "eyebrow": "Le corpus",
+    "title": "Parcourir le corpus",
+    "subtitle": "Les 195 fiches pays qui alimentent les réponses. Cherchez un pays ou filtrez par région.",
+    "searchPlaceholder": "Rechercher un pays…",
+    "allRegions": "Toutes",
+    "count_one": "{{count}} fiche",
+    "count_other": "{{count}} fiches",
+    "loading": "Chargement du corpus…",
+    "loadError": "Impossible de charger le corpus.",
+    "retry": "Réessayer",
+    "noResults": "Aucun résultat.",
+    "noResultsFor": "Aucun résultat pour « {{query}} ».",
+    "footer": "Sous licence MIT. Corpus dans le domaine public (œuvre du gouvernement américain).",
+    "detail": {
+      "loading": "Chargement de la fiche…",
+      "eyebrow": "Fiche pays",
+      "viewOriginal": "Source d'origine",
+      "errorEyebrow": "Erreur",
+      "errorTitle": "Impossible d'afficher cette fiche",
+      "errorBody": "Le document n'existe peut-être pas, ou le serveur est indisponible."
+    }
   }
 }
