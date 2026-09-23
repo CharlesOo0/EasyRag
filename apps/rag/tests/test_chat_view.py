@@ -1,6 +1,7 @@
 import json
 from unittest import mock
 
+from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
 from rest_framework.test import APITestCase
@@ -8,12 +9,18 @@ from rest_framework.test import APITestCase
 from apps.rag.models import Chunk, Document
 from apps.rag.services.llm import OllamaError
 from apps.rag.services.retrieval import RetrievedChunk
+from apps.rag.views import _chat_slots
 
 
 def fake_hit(title, heading, content, sim=0.8, url="https://example.org/x"):
     doc = Document(title=title, source_path="p.md", content_hash="h", metadata={"source_url": url})
     chunk = Chunk(document=doc, heading_path=heading, content=content, position=0)
     return RetrievedChunk(chunk=chunk, distance=1 - sim, similarity=sim)
+
+
+def configured_rate(scope: str) -> int:
+    """The integer request count for a DRF scoped-throttle rate like '10/min'."""
+    return int(settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"][scope].split("/")[0])
 
 
 def read_events(response):
@@ -113,6 +120,38 @@ class ChatViewTests(APITestCase):
         self.assertEqual(events[-1][0], "done")
 
     def test_throttled_after_the_scope_rate(self):
-        statuses = [self.run_chat()[0].status_code for _ in range(21)]
-        self.assertEqual(statuses.count(200), 20)
+        limit = configured_rate("rag_chat")
+        statuses = [self.run_chat()[0].status_code for _ in range(limit + 1)]
+        self.assertEqual(statuses.count(200), limit)
         self.assertEqual(statuses[-1], 429)
+
+    def test_generation_is_capped_by_num_predict(self):
+        captured = {}
+
+        def stream(messages, **kwargs):
+            captured.update(kwargs)
+            return iter(["hi"])
+
+        self.run_chat(stream=stream)
+        self.assertEqual(captured["options"], {"num_predict": settings.RAG_MAX_TOKENS})
+
+    def test_returns_503_at_the_concurrency_limit(self):
+        # Drain every slot to simulate the server already at capacity, rather
+        # than spinning up RAG_MAX_CONCURRENT_CHATS real concurrent requests.
+        held = 0
+        while _chat_slots.acquire(blocking=False):
+            held += 1
+        try:
+            response, events = self.run_chat()
+            self.assertEqual(response.status_code, 503)
+            self.assertIsNone(events)
+        finally:
+            for _ in range(held):
+                _chat_slots.release()
+
+    def test_the_concurrency_slot_is_freed_after_a_request(self):
+        """A finished request must not leak its slot - otherwise the server
+        would permanently lose capacity after RAG_MAX_CONCURRENT_CHATS uses."""
+        for _ in range(settings.RAG_MAX_CONCURRENT_CHATS + 2):
+            response, _ = self.run_chat()
+            self.assertEqual(response.status_code, 200)

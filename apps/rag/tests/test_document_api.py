@@ -1,8 +1,14 @@
+from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from apps.rag.models import Document
+
+
+def configured_rate(scope: str) -> int:
+    """The integer request count for a DRF scoped-throttle rate like '120/min'."""
+    return int(settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"][scope].split("/")[0])
 
 
 class DocumentAPITests(APITestCase):
@@ -55,3 +61,21 @@ class DocumentAPITests(APITestCase):
         self.assertEqual(
             self.client.get(reverse("rag_document", args=["chad"])).status_code, 200
         )
+
+    def test_throttled_after_the_scope_rate(self):
+        limit = configured_rate("rag_read")
+        url = reverse("rag_documents")
+        statuses = [self.client.get(url).status_code for _ in range(limit + 1)]
+        self.assertEqual(statuses.count(200), limit)
+        self.assertEqual(statuses[-1], 429)
+
+    def test_read_and_chat_throttles_are_independent(self):
+        # rag_read and rag_chat share the ScopedRateThrottle class but must
+        # not share a counter - hitting one scope's limit must not touch the
+        # other's. A POST with no body 400s from validation, before retrieval
+        # or Ollama are touched, so this needs no mocking.
+        limit = configured_rate("rag_read")
+        url = reverse("rag_documents")
+        for _ in range(limit):
+            self.client.get(url)
+        self.assertEqual(self.client.post(reverse("rag_chat"), {}, format="json").status_code, 400)

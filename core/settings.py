@@ -148,10 +148,12 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "DEFAULT_THROTTLE_CLASSES": ("rest_framework.throttling.ScopedRateThrottle",),
     "DEFAULT_THROTTLE_RATES": {
-        # Public RAG endpoints (apps/rag/views.py): chat is expensive, the
-        # read-only corpus API is cheap.
-        "rag_chat": "20/min",
-        "rag_read": "120/min",
+        # Public RAG endpoints (apps/rag/views.py): chat is expensive (a CPU
+        # generation), the read-only corpus API is cheap. Per client IP - see
+        # docs/DEPLOYMENT.md for a note on trusting X-Forwarded-For behind a
+        # proxy, which this keys on.
+        "rag_chat": os.getenv("RAG_CHAT_THROTTLE", "10/min"),
+        "rag_read": os.getenv("RAG_READ_THROTTLE", "120/min"),
     },
 }
 
@@ -197,6 +199,19 @@ OLLAMA_READ_TIMEOUT = float(os.getenv("OLLAMA_READ_TIMEOUT", 120))
 # How long Ollama keeps the model in memory after a request. "-1" = forever
 # (no cold reload between questions); "5m" is Ollama's default.
 OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "-1")
+# Caps how many tokens a single answer can generate (Ollama's `num_predict`).
+# Nothing upstream bounded this before: a pathological or malicious question
+# could otherwise run generation to the model's own limit, tying up the one
+# worker for the whole read timeout. The system prompt already asks for
+# concise, cited answers - real ones land well under this.
+RAG_MAX_TOKENS = int(os.getenv("RAG_MAX_TOKENS", 600))
+# How many chats can be generating at once before the server answers new ones
+# with 429 instead of queuing them invisibly. gunicorn runs a handful of
+# threads over one Ollama instance that itself processes one generation at a
+# time by default, so past a small number every extra concurrent request just
+# waits behind the others anyway - better to say so than to hold the
+# connection open and hope.
+RAG_MAX_CONCURRENT_CHATS = int(os.getenv("RAG_MAX_CONCURRENT_CHATS", 4))
 # Must be a 384-dim model - the value is baked into rag.Chunk.embedding
 # (apps/rag/models.py EMBEDDING_DIMENSIONS). e5 models want their inputs
 # prefixed ("query: " / "passage: "); the embedding service applies these.
