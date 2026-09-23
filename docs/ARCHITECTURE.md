@@ -94,9 +94,14 @@ Swapping corpora: replace the files under `corpus/` (see [`corpus-format.md`](co
 | `RAG_TOP_K` | 8 | chunks retrieved (and shown as source cards) |
 | `RAG_SIMILARITY_THRESHOLD` | 0.72 | a floor only — e5 similarities sit in a narrow high band; real precision would need hybrid search |
 | `RAG_PROMPT_CONTEXT_CHARS` | 2800 | caps what the LLM prefills (~750 tokens ≈ 12s to first token on CPU) |
+| `RAG_MAX_TOKENS` | 600 | caps one answer's length (`num_predict`) — the endpoint is public with no login, so nothing upstream bounded this before |
+| `RAG_MAX_CONCURRENT_CHATS` | 4 | in-flight generations before new requests get `503` instead of queueing; per-process, see [DEPLOYMENT.md](DEPLOYMENT.md) |
+| `RAG_MAX_HISTORY_CHARS` | 4000 | caps the client-supplied `history` field once folded into the prompt — unlike retrieved context, it isn't shaped by `RAG_PROMPT_CONTEXT_CHARS` |
 | `RAG_LLM_MODEL` | `llama3.2:3b` | Ollama model |
 | `OLLAMA_KEEP_ALIVE` | `-1` | keep the model resident (a cold reload is ~15-25s) |
 | `OLLAMA_CONNECT_TIMEOUT` / `OLLAMA_READ_TIMEOUT` | 5 / 120 | the read timeout must tolerate slow CPU generation |
+| `RAG_CHAT_THROTTLE` / `RAG_READ_THROTTLE` | 10/min / 120/min | per-IP request rate on the chat / corpus-read endpoints |
+| `TRUSTED_PROXY_COUNT` | 0 | trusted reverse-proxy hops for the throttle's client-IP lookup; see [DEPLOYMENT.md](DEPLOYMENT.md) |
 
 ## Design notes
 

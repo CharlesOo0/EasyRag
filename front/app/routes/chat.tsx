@@ -7,6 +7,7 @@ import { EmptyState } from "~/features/chat/empty-state";
 import { MessageTurn } from "~/features/chat/message";
 import { SourcePanel, SourceViewerProvider } from "~/features/chat/source-viewer";
 import { useChat } from "~/features/chat/hooks";
+import { MAX_QUESTION_CHARS } from "~/features/chat/types";
 
 export function meta() {
   return [{ title: "EasyRag — Chat" }];
@@ -131,6 +132,7 @@ function Conversation() {
                 }
               }}
               rows={1}
+              maxLength={MAX_QUESTION_CHARS}
               placeholder={t("chat.placeholder")}
               className="max-h-40 flex-1 resize-none rounded-sm border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
             />
@@ -158,8 +160,13 @@ function Conversation() {
               </button>
             )}
           </div>
-          <p className="mt-1.5 font-mono text-[0.65rem] tracking-wide text-muted-foreground">
-            {t("chat.hint")}
+          <p className="mt-1.5 flex justify-between font-mono text-[0.65rem] tracking-wide text-muted-foreground">
+            <span>{t("chat.hint")}</span>
+            {draft.length > MAX_QUESTION_CHARS * 0.9 && (
+              <span className={draft.length >= MAX_QUESTION_CHARS ? "text-destructive" : undefined}>
+                {t("chat.charCount", { count: draft.length, max: MAX_QUESTION_CHARS })}
+              </span>
+            )}
           </p>
         </form>
       </div>

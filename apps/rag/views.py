@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 
+from django.conf import settings
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
@@ -32,11 +34,16 @@ from apps.rag.serializers import (
     DocumentListSerializer,
 )
 from apps.rag.services import llm, prompt, retrieval
-from apps.rag.services.llm import OllamaError
 
 logger = logging.getLogger(__name__)
 
 SNIPPET_CHARS = 300
+
+# Bounds how many chats can be generating at once (see RAG_MAX_CONCURRENT_CHATS
+# in settings). One process-wide semaphore, since gunicorn here runs a single
+# worker with several threads sharing one Ollama instance - the thing this
+# protects is per-process, not per-request.
+_chat_slots = threading.BoundedSemaphore(settings.RAG_MAX_CONCURRENT_CHATS)
 
 
 class IgnoreClientContentNegotiation(BaseContentNegotiation):
@@ -77,6 +84,15 @@ class ChatView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
+        # Past RAG_MAX_CONCURRENT_CHATS in-flight generations, say so instead
+        # of accepting the connection and leaving the client waiting behind
+        # requests it can't see.
+        if not _chat_slots.acquire(blocking=False):
+            return Response(
+                {"detail": "The server is busy answering other questions. Try again shortly."},
+                status=503,
+            )
+
         response = StreamingHttpResponse(
             self._events(
                 serializer.validated_data["question"],
@@ -91,27 +107,35 @@ class ChatView(APIView):
     @staticmethod
     def _events(question: str, history: list[dict]):
         try:
-            hits = retrieval.search(question)
-        except Exception:
-            logger.exception("rag chat: retrieval failed")
-            yield _sse("error", {"detail": "retrieval failed"})
-            return
+            try:
+                hits = retrieval.search(question)
+            except Exception:
+                logger.exception("rag chat: retrieval failed")
+                yield _sse("error", {"detail": "retrieval failed"})
+                return
 
-        yield _sse("sources", [_source(h) for h in hits])
+            yield _sse("sources", [_source(h) for h in hits])
 
-        messages = prompt.build_messages(question, hits, history=history)
-        try:
-            for token in llm.stream_chat(messages):
-                yield _sse("token", {"text": token})
-        except OllamaError as exc:
-            yield _sse("error", {"detail": str(exc)})
-            return
-        except Exception:
-            logger.exception("rag chat: generation failed")
-            yield _sse("error", {"detail": "generation failed"})
-            return
+            messages = prompt.build_messages(question, hits, history=history)
+            options = {"num_predict": settings.RAG_MAX_TOKENS}
+            try:
+                for token in llm.stream_chat(messages, options=options):
+                    yield _sse("token", {"text": token})
+            except Exception:
+                # Covers OllamaError too: its message can include internal
+                # details (the Ollama URL, a raw upstream error body) that
+                # shouldn't reach an anonymous client - log it, say nothing
+                # specific back.
+                logger.exception("rag chat: generation failed")
+                yield _sse("error", {"detail": "generation failed"})
+                return
 
-        yield _sse("done", {})
+            yield _sse("done", {})
+        finally:
+            # Runs on normal completion, an early `return` above, or the
+            # generator being closed early (client disconnect) - the slot is
+            # always freed.
+            _chat_slots.release()
 
 
 class DocumentListView(generics.ListAPIView):

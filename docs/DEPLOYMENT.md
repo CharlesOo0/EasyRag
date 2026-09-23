@@ -76,6 +76,49 @@ for a low-traffic showcase, not for load.
 replace `stream_chat` — it's ~40 lines, one function, and the only Ollama-aware
 code. Everything upstream (`retrieval`, `prompt`) and the SSE view are unchanged.
 
+## Public API — no login, so the limits matter
+
+The chat endpoint has no auth in front of it by design. Three things bound how
+much damage one client (or one bad actor) can do:
+
+- **`RAG_CHAT_THROTTLE`** (default `10/min`) / **`RAG_READ_THROTTLE`**
+  (`120/min`) — per-IP request rate, via DRF's `ScopedRateThrottle`.
+- **`RAG_MAX_CONCURRENT_CHATS`** (default `4`) — caps how many answers can be
+  generating at once; past that the server returns `503` immediately instead
+  of queueing the connection silently. This is a **per-process** limit (a
+  plain `threading.Semaphore`), which is why the image ships with
+  `gunicorn --workers 1` — running more workers would give each its own
+  counter instead of one shared cap.
+- **`RAG_MAX_TOKENS`** (default `600`) — passed to Ollama as `num_predict`, so
+  one answer can't run generation out to the model's own limit and tie up a
+  worker for the full `OLLAMA_READ_TIMEOUT`.
+- **`RAG_MAX_HISTORY_CHARS`** (default `4000`) — the client-supplied `history`
+  field is shaped by the serializer (10 turns, 2000 chars each) but that still
+  allows ~20,000 chars of prefill the model has to chew through before it can
+  answer; this trims it to the most recent turns that fit, the same idea as
+  `RAG_PROMPT_CONTEXT_CHARS` applied to retrieved passages.
+
+**`TRUSTED_PROXY_COUNT`** (default `0`) governs whether the per-IP throttle
+trusts `X-Forwarded-For` at all. Left at `0`, the throttle keys on the raw
+connecting socket and ignores the header entirely — correct with no proxy in
+front, and safe by default: a client can set `X-Forwarded-For` to anything it
+likes, and most proxies (Caddy, nginx, Traefik included, in their default
+configs) *append* to an existing value rather than replace it, so trusting it
+unconditionally lets a client bypass the whole limit by varying its own
+prefix on every request. Set it to `1` for the single-hop setup in the
+"simplest path" above — DRF then reads the client IP as the last entry of
+`X-Forwarded-For`, discarding anything a client prepended before that. Only
+raise it further if there is a *second* proxy hop you also control between
+the internet and that one.
+
+Before exposing this publicly, also run:
+
+```bash
+python manage.py check --deploy   # Django's own production checklist
+pip-audit                          # backend dependencies
+cd front && npm audit              # frontend dependencies
+```
+
 ## Environment variables
 
 | Variable | Prod value |
@@ -90,6 +133,11 @@ code. Everything upstream (`retrieval`, `prompt`) and the SSE view are unchanged
 | `USE_X_FORWARDED_PROTO` | `True` behind a TLS proxy |
 | `OLLAMA_URL` | the Ollama server |
 | `RAG_LLM_MODEL` | model to pull / use (default `llama3.2:3b`) |
+| `RAG_MAX_TOKENS` | cap on one answer's length (default `600`) |
+| `RAG_MAX_CONCURRENT_CHATS` | cap on simultaneous generations (default `4`) |
+| `RAG_MAX_HISTORY_CHARS` | cap on client-supplied conversation history fed to the prompt (default `4000`) |
+| `RAG_CHAT_THROTTLE` / `RAG_READ_THROTTLE` | per-IP request rate (default `10/min` / `120/min`) |
+| `TRUSTED_PROXY_COUNT` | trusted reverse-proxy hops for the per-IP throttle (default `0`; `1` for the single-proxy "simplest path") |
 
 The `RAG_*` retrieval knobs (see [ARCHITECTURE.md](ARCHITECTURE.md)) rarely need
 changing in prod.

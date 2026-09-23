@@ -1,5 +1,9 @@
 export type ChatRole = "user" | "assistant";
 
+/** Must match MAX_QUESTION_CHARS in apps/rag/serializers.py - enforced here too
+ * so a client can't even type past it, instead of finding out via a 400. */
+export const MAX_QUESTION_CHARS = 2000;
+
 export type ChatTurn = { role: ChatRole; content: string };
 
 export interface ChatSource {

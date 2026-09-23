@@ -1,19 +1,27 @@
 import json
 from unittest import mock
 
+from django.conf import settings
 from django.core.cache import cache
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from apps.rag.models import Chunk, Document
 from apps.rag.services.llm import OllamaError
 from apps.rag.services.retrieval import RetrievedChunk
+from apps.rag.views import _chat_slots
 
 
 def fake_hit(title, heading, content, sim=0.8, url="https://example.org/x"):
     doc = Document(title=title, source_path="p.md", content_hash="h", metadata={"source_url": url})
     chunk = Chunk(document=doc, heading_path=heading, content=content, position=0)
     return RetrievedChunk(chunk=chunk, distance=1 - sim, similarity=sim)
+
+
+def configured_rate(scope: str) -> int:
+    """The integer request count for a DRF scoped-throttle rate like '10/min'."""
+    return int(settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"][scope].split("/")[0])
 
 
 def read_events(response):
@@ -40,7 +48,7 @@ class ChatViewTests(APITestCase):
             fake_hit("Portugal", "Portugal > People and Society", "Languages: Portuguese.", sim=0.6),
         ]
 
-    def run_chat(self, *, question="hi", history=None, search=None, stream=None):
+    def run_chat(self, *, question="hi", history=None, search=None, stream=None, extra=None):
         """POST to the endpoint and fully consume the SSE stream while the
         service mocks are still active (the response body is lazy)."""
         search = search or (lambda *a, **k: self.hits)
@@ -50,7 +58,7 @@ class ChatViewTests(APITestCase):
             body["history"] = history
         with mock.patch("apps.rag.services.retrieval.search", side_effect=search), \
              mock.patch("apps.rag.services.llm.stream_chat", side_effect=stream):
-            response = self.client.post(self.url, body, format="json")
+            response = self.client.post(self.url, body, format="json", **(extra or {}))
             events = read_events(response) if response.status_code == 200 else None
         return response, events
 
@@ -95,9 +103,14 @@ class ChatViewTests(APITestCase):
             yield "partial "
             raise OllamaError("cannot reach Ollama at http://ollama:11434")
 
-        _, events = self.run_chat(stream=boom)
+        with self.assertLogs("apps.rag.views", level="ERROR"):
+            _, events = self.run_chat(stream=boom)
         self.assertEqual([n for n, _ in events], ["sources", "token", "error"])
-        self.assertIn("cannot reach Ollama", events[-1][1]["detail"])
+        # The detail must stay generic - the real OllamaError message can
+        # name internal infrastructure (the Ollama URL, an upstream error
+        # body) that an anonymous client shouldn't see. It's still logged
+        # server-side, in full, above.
+        self.assertEqual(events[-1][1]["detail"], "generation failed")
 
     def test_retrieval_failure_becomes_an_error_event(self):
         def kaboom(*a, **k):
@@ -113,6 +126,67 @@ class ChatViewTests(APITestCase):
         self.assertEqual(events[-1][0], "done")
 
     def test_throttled_after_the_scope_rate(self):
-        statuses = [self.run_chat()[0].status_code for _ in range(21)]
-        self.assertEqual(statuses.count(200), 20)
+        limit = configured_rate("rag_chat")
+        statuses = [self.run_chat()[0].status_code for _ in range(limit + 1)]
+        self.assertEqual(statuses.count(200), limit)
         self.assertEqual(statuses[-1], 429)
+
+    def test_throttle_ignores_a_client_supplied_x_forwarded_for(self):
+        """TRUSTED_PROXY_COUNT is unset in tests (defaults to 0), so the
+        throttle must key on the real connecting IP - not a header the
+        client controls. Otherwise varying X-Forwarded-For per request
+        bypasses the whole rate limit."""
+        limit = configured_rate("rag_chat")
+        statuses = [
+            self.run_chat(extra={"HTTP_X_FORWARDED_FOR": f"203.0.113.{i}"})[0].status_code
+            for i in range(limit + 1)
+        ]
+        self.assertEqual(statuses.count(200), limit)
+        self.assertEqual(statuses[-1], 429)
+
+    def test_throttle_trusts_x_forwarded_for_once_num_proxies_is_configured(self):
+        """The opt-in (TRUSTED_PROXY_COUNT=1, a single trusted reverse proxy)
+        must actually restore independent per-client throttling - otherwise
+        the fix above just breaks the feature for real proxied deployments
+        instead of making it safe."""
+        rest_framework_settings = {**settings.REST_FRAMEWORK, "NUM_PROXIES": 1}
+        limit = configured_rate("rag_chat")
+        with override_settings(REST_FRAMEWORK=rest_framework_settings):
+            client_a = [
+                self.run_chat(extra={"HTTP_X_FORWARDED_FOR": "203.0.113.1"})[0].status_code
+                for _ in range(limit)
+            ]
+            client_b_first = self.run_chat(extra={"HTTP_X_FORWARDED_FOR": "203.0.113.2"})[0]
+        self.assertEqual(client_a.count(200), limit)
+        self.assertEqual(client_b_first.status_code, 200)
+
+    def test_generation_is_capped_by_num_predict(self):
+        captured = {}
+
+        def stream(messages, **kwargs):
+            captured.update(kwargs)
+            return iter(["hi"])
+
+        self.run_chat(stream=stream)
+        self.assertEqual(captured["options"], {"num_predict": settings.RAG_MAX_TOKENS})
+
+    def test_returns_503_at_the_concurrency_limit(self):
+        # Drain every slot to simulate the server already at capacity, rather
+        # than spinning up RAG_MAX_CONCURRENT_CHATS real concurrent requests.
+        held = 0
+        while _chat_slots.acquire(blocking=False):
+            held += 1
+        try:
+            response, events = self.run_chat()
+            self.assertEqual(response.status_code, 503)
+            self.assertIsNone(events)
+        finally:
+            for _ in range(held):
+                _chat_slots.release()
+
+    def test_the_concurrency_slot_is_freed_after_a_request(self):
+        """A finished request must not leak its slot - otherwise the server
+        would permanently lose capacity after RAG_MAX_CONCURRENT_CHATS uses."""
+        for _ in range(settings.RAG_MAX_CONCURRENT_CHATS + 2):
+            response, _ = self.run_chat()
+            self.assertEqual(response.status_code, 200)
