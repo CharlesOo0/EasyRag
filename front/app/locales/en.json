@@ -8,6 +8,7 @@
     "assistant": "EasyRag",
     "placeholder": "Ask a question about the countries in the corpus…",
     "hint": "↵ send · ⇧↵ new line",
+    "charCount": "{{count}}/{{max}}",
     "send": "Send",
     "stop": "Stop",
     "thinking": "Searching the corpus",

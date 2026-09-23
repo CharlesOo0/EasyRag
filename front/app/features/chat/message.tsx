@@ -41,11 +41,11 @@ export function MessageTurn({
       </p>
 
       {isUser ? (
-        <p className="mt-2 border-l-2 border-primary/50 pl-3 whitespace-pre-wrap">
+        <p className="mt-2 border-l-2 border-primary/50 pl-3 break-words whitespace-pre-wrap">
           {message.content}
         </p>
       ) : (
-        <div className="mt-2 leading-relaxed whitespace-pre-wrap">
+        <div className="mt-2 leading-relaxed break-words whitespace-pre-wrap">
           {renderWithCitations(
             message.content,
             sources,
