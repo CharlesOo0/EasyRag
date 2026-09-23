@@ -8,18 +8,24 @@ import {
   type ReactNode,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { ExternalLink, X } from "lucide-react";
 
 import { fetchDocument } from "./documents";
 import { Markdown } from "./markdown";
 import type { ChatSource, CorpusDocument } from "./types";
 
 const HIGHLIGHT_MS = 2600;
-const EXIT_MS = 200;
 
-type SourceViewer = { open: (source: ChatSource) => void };
+type SourceViewer = {
+  source: ChatSource | null;
+  open: (source: ChatSource) => void;
+  close: () => void;
+};
 
-const SourceViewerContext = createContext<SourceViewer>({ open: () => {} });
+const SourceViewerContext = createContext<SourceViewer>({
+  source: null,
+  open: () => {},
+  close: () => {},
+});
 
 export function useSourceViewer(): SourceViewer {
   return useContext(SourceViewerContext);
@@ -31,9 +37,8 @@ export function SourceViewerProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => setSource(null), []);
 
   return (
-    <SourceViewerContext.Provider value={{ open }}>
+    <SourceViewerContext.Provider value={{ source, open, close }}>
       {children}
-      {source && <SourcePanel source={source} onClose={close} />}
     </SourceViewerContext.Provider>
   );
 }
@@ -43,37 +48,32 @@ type Fetch =
   | { state: "ready"; doc: CorpusDocument }
   | { state: "error" };
 
-function SourcePanel({ source, onClose }: { source: ChatSource; onClose: () => void }) {
+/**
+ * The cited document. From `lg` up it is a column beside the conversation; on
+ * narrower screens there is no room for that, so it becomes a sheet over the
+ * chat with a scrim.
+ */
+export function SourcePanel() {
   const { t } = useTranslation();
+  const { source, close } = useSourceViewer();
   const [result, setResult] = useState<Fetch>({ state: "loading" });
-  const [visible, setVisible] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  const dismiss = useCallback(() => {
-    setVisible(false);
-    window.setTimeout(onClose, EXIT_MS);
-  }, [onClose]);
-
-  // Slide in on mount.
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setVisible(true));
-    closeButtonRef.current?.focus();
-    return () => cancelAnimationFrame(id);
-  }, []);
-
   // Close on Escape.
   useEffect(() => {
+    if (!source) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
+      if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dismiss]);
+  }, [source, close]);
 
   // Fetch the document for the active source.
   useEffect(() => {
+    if (!source) return;
     let cancelled = false;
     setResult({ state: "loading" });
     fetchDocument(source.slug).then(
@@ -83,11 +83,11 @@ function SourcePanel({ source, onClose }: { source: ChatSource; onClose: () => v
     return () => {
       cancelled = true;
     };
-  }, [source.slug, reloadKey]);
+  }, [source, reloadKey]);
 
   // Once rendered, scroll to and briefly highlight the cited passage.
   useEffect(() => {
-    if (result.state !== "ready" || !scrollRef.current) return;
+    if (!source || result.state !== "ready" || !scrollRef.current) return;
     const container = scrollRef.current;
     const target = findCitedElement(container, source);
     if (!target) return;
@@ -107,30 +107,24 @@ function SourcePanel({ source, onClose }: { source: ChatSource; onClose: () => v
     };
   }, [result, source]);
 
+  if (!source) return null;
+
   const title = result.state === "ready" ? result.doc.title : source.title;
   const sourceUrl =
     (result.state === "ready" && stringMeta(result.doc.metadata, "source_url")) ||
     source.source_url;
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={title}>
-      <div
-        onClick={dismiss}
-        className={
-          "absolute inset-0 bg-foreground/40 transition-opacity duration-200 motion-reduce:transition-none " +
-          (visible ? "opacity-100" : "opacity-0")
-        }
-      />
+    <div className="fixed inset-0 z-50 lg:static lg:z-auto lg:h-full lg:w-[24rem] lg:shrink-0 xl:w-[28rem]">
+      <div onClick={close} className="absolute inset-0 bg-foreground/40 lg:hidden" />
       <aside
-        className={
-          "absolute inset-y-0 right-0 flex w-full flex-col border-l border-border bg-background shadow-xl transition-transform duration-200 ease-out motion-reduce:transition-none sm:max-w-xl lg:max-w-2xl " +
-          (visible ? "translate-x-0" : "translate-x-full")
-        }
+        className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-border bg-card lg:static lg:h-full lg:max-w-none"
+        aria-label={title}
       >
-        <header className="flex items-start gap-3 border-b border-border px-5 py-3">
+        <header className="flex items-start gap-3 border-b border-border px-4 py-3">
           <div className="min-w-0 flex-1">
             <h2 className="truncate font-heading text-base font-semibold">{title}</h2>
-            <p className="mt-0.5 truncate font-mono text-[0.7rem] tracking-wide text-muted-foreground uppercase">
+            <p className="mt-0.5 truncate font-mono text-[0.65rem] tracking-wide text-muted-foreground uppercase">
               {source.heading_path}
             </p>
           </div>
@@ -139,34 +133,33 @@ function SourcePanel({ source, onClose }: { source: ChatSource; onClose: () => v
               href={sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-0.5 inline-flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
+              className="mt-0.5 shrink-0 font-mono text-[0.65rem] tracking-wide text-primary uppercase hover:underline"
             >
               {t("chat.source.viewOriginal")}
-              <ExternalLink className="h-3 w-3" />
             </a>
           )}
           <button
             ref={closeButtonRef}
-            onClick={dismiss}
+            onClick={close}
             aria-label={t("chat.source.close")}
-            className="-mr-1 shrink-0 rounded-sm p-1 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="-mr-1 shrink-0 cursor-pointer rounded-sm px-1.5 py-0.5 font-mono text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
-            <X className="h-4 w-4" />
+            &times;
           </button>
         </header>
 
-        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {result.state === "loading" && (
-            <p className="text-sm text-muted-foreground">{t("chat.source.loading")}</p>
+            <p className="font-mono text-xs text-muted-foreground">{t("chat.source.loading")}</p>
           )}
           {result.state === "error" && (
             <div className="text-sm">
-              <p className="text-destructive">{t("chat.source.error")}</p>
+              <p className="font-mono text-xs text-destructive">{t("chat.source.error")}</p>
               <button
                 onClick={() => setReloadKey((k) => k + 1)}
-                className="mt-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="mt-2 cursor-pointer font-mono text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
-                {t("chat.retry")}
+                &#8635; {t("chat.retry")}
               </button>
             </div>
           )}
