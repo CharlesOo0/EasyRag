@@ -12,13 +12,6 @@ export interface ChatSource {
   source_url: string;
 }
 
-/** A full corpus document from `GET /api/rag/documents/<slug>/`. */
-export interface CorpusDocument {
-  slug: string;
-  title: string;
-  metadata: Record<string, unknown>;
-  body: string;
-}
 
 /** A decoded Server-Sent Event from POST /api/rag/chat/. `sources` and `token`
  * are streamed to the caller; `done` / `error` become the stream's result. */
