@@ -155,6 +155,19 @@ REST_FRAMEWORK = {
         "rag_chat": os.getenv("RAG_CHAT_THROTTLE", "10/min"),
         "rag_read": os.getenv("RAG_READ_THROTTLE", "120/min"),
     },
+    # How many reverse-proxy hops between the client and this app are trusted
+    # to have *set* (not merely forwarded) X-Forwarded-For. Left at 0 (trust
+    # nothing, key on the raw socket's REMOTE_ADDR) until an operator opts in:
+    # DRF's default is `None`, which - if the header is present at all, from
+    # anyone - uses its whole raw value as the throttle identity instead of
+    # REMOTE_ADDR. A client can set that header itself, and most proxies
+    # (nginx/Caddy/Traefik default configs included) *append* to an existing
+    # value rather than overwrite it, so an attacker varying their own prefix
+    # gets a fresh throttle identity on every request even through a
+    # "correctly configured" proxy. Set to 1 for the single-hop setup in
+    # DEPLOYMENT.md; DRF then reads the client IP as the Nth-from-the-right
+    # entry, ignoring anything a client prepended.
+    "NUM_PROXIES": int(os.getenv("TRUSTED_PROXY_COUNT", 0)),
 }
 
 
@@ -225,6 +238,13 @@ RAG_TOP_K = int(os.getenv("RAG_TOP_K", 8))
 # prefill, which on CPU is the main driver of time-to-first-token: ~2800 chars
 # is roughly 750 tokens, ~12s on the default model).
 RAG_PROMPT_CONTEXT_CHARS = int(os.getenv("RAG_PROMPT_CONTEXT_CHARS", 2800))
+# Same idea, applied to the client-supplied `history` field: the retrieved
+# context above is budgeted, but history isn't shaped by retrieval at all -
+# the serializer only bounds it per-message (2000 chars) and by turn count
+# (10), which still allows ~20,000 chars of prefill the request budget above
+# doesn't account for. build_messages() keeps the most recent turns that fit
+# under this many characters, oldest first to go.
+RAG_MAX_HISTORY_CHARS = int(os.getenv("RAG_MAX_HISTORY_CHARS", 4000))
 # Chunking: target window and overlap, in (approximate) tokens. e5-small takes
 # 512 tokens, so a whole "## Section" of a country profile fits in one chunk.
 RAG_CHUNK_TOKENS = int(os.getenv("RAG_CHUNK_TOKENS", 350))

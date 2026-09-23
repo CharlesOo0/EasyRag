@@ -69,6 +69,18 @@ class DocumentAPITests(APITestCase):
         self.assertEqual(statuses.count(200), limit)
         self.assertEqual(statuses[-1], 429)
 
+    def test_throttle_ignores_a_client_supplied_x_forwarded_for(self):
+        """TRUSTED_PROXY_COUNT is unset in tests (defaults to 0): the throttle
+        must key on the real connecting IP, not a client-controlled header."""
+        limit = configured_rate("rag_read")
+        url = reverse("rag_documents")
+        statuses = [
+            self.client.get(url, HTTP_X_FORWARDED_FOR=f"203.0.113.{i}").status_code
+            for i in range(limit + 1)
+        ]
+        self.assertEqual(statuses.count(200), limit)
+        self.assertEqual(statuses[-1], 429)
+
     def test_read_and_chat_throttles_are_independent(self):
         # rag_read and rag_chat share the ScopedRateThrottle class but must
         # not share a counter - hitting one scope's limit must not touch the

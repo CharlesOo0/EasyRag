@@ -34,7 +34,6 @@ from apps.rag.serializers import (
     DocumentListSerializer,
 )
 from apps.rag.services import llm, prompt, retrieval
-from apps.rag.services.llm import OllamaError
 
 logger = logging.getLogger(__name__)
 
@@ -122,10 +121,11 @@ class ChatView(APIView):
             try:
                 for token in llm.stream_chat(messages, options=options):
                     yield _sse("token", {"text": token})
-            except OllamaError as exc:
-                yield _sse("error", {"detail": str(exc)})
-                return
             except Exception:
+                # Covers OllamaError too: its message can include internal
+                # details (the Ollama URL, a raw upstream error body) that
+                # shouldn't reach an anonymous client - log it, say nothing
+                # specific back.
                 logger.exception("rag chat: generation failed")
                 yield _sse("error", {"detail": "generation failed"})
                 return
