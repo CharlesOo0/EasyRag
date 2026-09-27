@@ -15,10 +15,10 @@
     "intro": "EasyRag répond à partir d'un corpus figé de 195 fiches pays (CIA World Factbook), en citant ses sources. Essayez :",
     "emptyEyebrow": "Consultation du corpus",
     "examples": [
-      "Quelle langue parle-t-on au Brésil ?",
-      "Quelle est la capitale du Japon ?",
-      "Quels pays ont une frontière avec l'Allemagne ?",
-      "Quel est le climat de la Norvège ?"
+      "Combien d'aéroports compte la Russie ?",
+      "Qui est le chef de l'État du Japon ?",
+      "Quel pays est le plus peuplé, le Nigeria ou l'Éthiopie ?",
+      "Quelle est l'altitude du point culminant de la Tanzanie ?"
     ],
     "citation": "Source {{n}}",
     "similarity": "similarité",
@@ -124,9 +124,9 @@
     "tryIt": {
       "title": "Essayer",
       "examples": [
-        "Quelle langue parle-t-on au Brésil ?",
-        "Quel est le terrain du Népal ?",
-        "Quand le Bangladesh a-t-il obtenu son indépendance ?"
+        "Quel est le régime politique du Bhoutan ?",
+        "Quelles sont les principales ressources naturelles du Kazakhstan ?",
+        "Quand l'Inde a-t-elle obtenu son indépendance ?"
       ]
     },
     "footer": "Sous licence MIT. Corpus dans le domaine public (œuvre du gouvernement américain)."

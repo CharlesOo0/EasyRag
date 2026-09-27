@@ -17,11 +17,15 @@ SYSTEM_PROMPT = (
     "\n"
     "Rules:\n"
     "- Use only the numbered context passages provided with the question. "
-    "Do not rely on outside knowledge.\n"
+    "Do not state a fact, a number, or a relationship (e.g. a shared border) "
+    "that is not written in them, even if it seems true.\n"
     "- After each claim, cite the passages it comes from with their bracketed "
     "numbers, e.g. [1] or [2][3].\n"
     "- If the passages do not contain the answer, say so plainly and do not "
     "guess.\n"
+    "- If the question does not name a specific country and the passages "
+    "cover several unrelated ones, ask which country is meant instead of "
+    "picking one.\n"
     "- Answer in the language of the question. Be concise.\n"
 )
 

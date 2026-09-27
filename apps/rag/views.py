@@ -98,7 +98,11 @@ class ChatView(APIView):
                 serializer.validated_data["question"],
                 serializer.validated_data["history"],
             ),
-            content_type="text/event-stream",
+            # Explicit charset: text/* defaults to ISO-8859-1 per HTTP without
+            # one, which a browser's TextDecoder ignores (it's UTF-8 either
+            # way) but a plain HTTP client (e.g. `requests`) will honor and
+            # misdecode every accented character with.
+            content_type="text/event-stream; charset=utf-8",
         )
         response["Cache-Control"] = "no-cache"
         response["X-Accel-Buffering"] = "no"  # don't let a proxy buffer the stream

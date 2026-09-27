@@ -67,7 +67,7 @@ class ChatViewTests(APITestCase):
         response, events = self.run_chat(question="What language is spoken in Brazil?")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Type"], "text/event-stream")
+        self.assertEqual(response["Content-Type"], "text/event-stream; charset=utf-8")
         self.assertEqual([name for name, _ in events], ["sources", "token", "token", "done"])
 
         src = events[0][1][0]
