@@ -71,8 +71,38 @@ prod plutôt qu'à prendre pour acquis.
   enregistrée) - pas confirmé avec certitude via CLI, à checker dans le
   portail (Cost Management + Billing -> vue d'ensemble de la souscription).
 
+## Blocage rencontré (27/09/2026) - quota de calcul VM à 0
+
+Tentative de provisionner la VM de test de charge (`easyrag-loadtest-rg`) :
+échec systématique, aucune taille de VM testée n'a pu être créée, dans
+aucune des 5 régions autorisées par la policy du compte (`francecentral`,
+`norwayeast`, `germanywestcentral`, `polandcentral`, `switzerlandnorth`).
+
+- `Standard_D2s_v5` en France Central -> `QuotaExceeded` explicite (limite
+  actuelle : 0 coeur pour la famille Dsv5).
+- `Standard_B2ms` (France Central, West Europe - hors policy donc refusé
+  différemment, Germany West Central, Norway East) -> `SkuNotAvailable /
+  Capacity Restrictions` à chaque fois, message générique.
+- Même `Standard_B1s` (la plus petite taille possible) échoue pareil en
+  France Central.
+
+Conclusion : ce n'est pas une pénurie ponctuelle de capacité datacenter
+(improbable que B1s soit en rupture partout) - le compte "Azure for
+Students" n'a actuellement **aucun quota de calcul VM accordé**, dans aucune
+région autorisée. Rien n'a été facturé (aucune ressource partiellement créée
+- vérifié via `az resource list`, groupe de ressources vide supprimé).
+
+**Prochaine étape réelle** : demande d'augmentation de quota via le portail
+Azure (Cost Management -> Quotas, ou le lien fourni dans l'erreur :
+aka.ms/ProdportalCRP -> Usage + Quotas). À faire par l'utilisateur
+directement (formulaire lié à son compte). Pas garanti que ce soit approuvé
+rapidement, ou approuvé du tout, sur un compte étudiant gratuit - à voir une
+fois la demande soumise.
+
 ## Ce qui reste à faire, dans l'ordre
 
+- [ ] **Bloquant** : demander une augmentation de quota VM (portail Azure,
+      voir ci-dessus) - rien d'autre n'avance tant que ça n'est pas débloqué
 - [ ] Confirmer si "Azure for Students" a un plafond de dépense intégré (portail)
 - [ ] Rattacher une Action Group au budget existant
 - [ ] **Test de charge réel** : provisionner une VM D2s_v5 temporaire, déployer
