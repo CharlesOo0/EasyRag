@@ -15,10 +15,10 @@
     "intro": "EasyRag answers from a fixed corpus of 195 country profiles (CIA World Factbook), citing its sources. Try one of these:",
     "emptyEyebrow": "Consult the corpus",
     "examples": [
-      "What language is spoken in Brazil?",
-      "What is the capital of Japan?",
-      "Which countries border Germany?",
-      "What is Norway's climate like?"
+      "How many airports does Russia have?",
+      "Who is Japan's head of state?",
+      "Which country has more people, Nigeria or Ethiopia?",
+      "What is the elevation of Tanzania's highest point?"
     ],
     "citation": "Source {{n}}",
     "similarity": "similarity",
@@ -124,9 +124,9 @@
     "tryIt": {
       "title": "Try it",
       "examples": [
-        "What language is spoken in Brazil?",
-        "What is the terrain of Nepal?",
-        "When did Bangladesh gain independence?"
+        "What is Bhutan's system of government?",
+        "What are Kazakhstan's main natural resources?",
+        "When did India gain independence?"
       ]
     },
     "footer": "MIT licensed. Corpus is public domain (U.S. Government work)."
