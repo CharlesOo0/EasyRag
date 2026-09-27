@@ -28,11 +28,16 @@ The dev `docker-compose.yml` is already close. For production:
    CORS_ALLOWED_ORIGINS: https://easyrag.example.com
    CSRF_TRUSTED_ORIGINS: https://easyrag.example.com
    USE_X_FORWARDED_PROTO: "True"   # if behind a TLS-terminating proxy
+   TRUSTED_PROXY_COUNT: "1"        # this setup puts one proxy in front - see below
    ```
 
    With `DEBUG=False` the security hardening in `settings.py` turns on: HSTS,
    secure cookies, HTTP→HTTPS redirect. `USE_X_FORWARDED_PROTO=True` is required
-   behind a proxy or the redirect loops.
+   behind a proxy or the redirect loops. **Don't skip `TRUSTED_PROXY_COUNT`**:
+   left at its default (`0`), the per-IP throttle below falls back to
+   `REMOTE_ADDR`, which behind this proxy is the proxy's own IP for every
+   visitor - the `rag_chat` limit silently becomes one shared bucket for the
+   whole site instead of one per client.
 
 2. Put a TLS proxy (Caddy, nginx, Traefik) in front of the frontend. **Disable
    response buffering** for `/api/rag/chat/` — SSE must stream (nginx:

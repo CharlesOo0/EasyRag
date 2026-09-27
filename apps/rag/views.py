@@ -116,9 +116,9 @@ class ChatView(APIView):
 
             yield _sse("sources", [_source(h) for h in hits])
 
-            messages = prompt.build_messages(question, hits, history=history)
             options = {"num_predict": settings.RAG_MAX_TOKENS}
             try:
+                messages = prompt.build_messages(question, hits, history=history)
                 for token in llm.stream_chat(messages, options=options):
                     yield _sse("token", {"text": token})
             except Exception:

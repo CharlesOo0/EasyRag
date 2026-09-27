@@ -123,6 +123,17 @@ class ChatViewTests(APITestCase):
         # server-side, in full, above.
         self.assertEqual(events[-1][1]["detail"], "generation failed")
 
+    def test_prompt_building_failure_becomes_an_error_event(self):
+        """build_messages() runs between the retrieval and generation try
+        blocks - it must be covered by the same safety net, not leave the
+        stream to end abruptly with no `error` event and nothing logged."""
+        with mock.patch(
+            "apps.rag.services.prompt.build_messages", side_effect=RuntimeError("boom"),
+        ), self.assertLogs("apps.rag.views", level="ERROR"):
+            _, events = self.run_chat()
+        self.assertEqual([n for n, _ in events], ["sources", "error"])
+        self.assertEqual(events[-1][1]["detail"], "generation failed")
+
     def test_retrieval_failure_becomes_an_error_event(self):
         def kaboom(*a, **k):
             raise RuntimeError("db down")
