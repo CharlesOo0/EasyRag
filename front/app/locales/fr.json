@@ -8,6 +8,7 @@
     "assistant": "EasyRag",
     "placeholder": "Posez une question sur les pays du corpus…",
     "hint": "↵ envoyer · ⇧↵ nouvelle ligne",
+    "charCount": "{{count}}/{{max}}",
     "send": "Envoyer",
     "stop": "Arrêter",
     "thinking": "Recherche dans le corpus",

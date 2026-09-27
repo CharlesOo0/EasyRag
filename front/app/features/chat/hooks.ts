@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { streamChat } from "./api";
-import type { ChatMessage, ChatTurn } from "./types";
+import { MAX_QUESTION_CHARS, type ChatMessage, type ChatTurn } from "./types";
 
 const newId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -95,7 +95,10 @@ export function useChat() {
 
   const send = useCallback(
     (raw: string) => {
-      const question = raw.trim();
+      // The composer already blocks typing/pasting past this via `maxLength`,
+      // but `send` is also reachable directly (an example prompt, the
+      // /chat?q=... auto-send) - enforce it here too so nothing can bypass it.
+      const question = raw.trim().slice(0, MAX_QUESTION_CHARS);
       if (!question || isStreaming) return;
       const assistantId = newId();
       commit((prev) => [

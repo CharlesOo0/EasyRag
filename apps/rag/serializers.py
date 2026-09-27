@@ -2,7 +2,9 @@ from rest_framework import serializers
 
 from apps.rag.models import Document
 
-MAX_QUESTION_CHARS = 2000
+# Mirrored in front/app/features/chat/types.ts (the composer enforces it
+# client-side too) - apps/rag/tests/test_serializers.py keeps the two in sync.
+MAX_QUESTION_CHARS = 500
 MAX_HISTORY_MESSAGES = 10
 
 

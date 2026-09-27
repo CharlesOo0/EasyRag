@@ -1,7 +1,7 @@
 from django.test import SimpleTestCase
 
 from apps.rag.models import Chunk
-from apps.rag.services.prompt import SYSTEM_PROMPT, build_messages, format_context
+from apps.rag.services.prompt import SYSTEM_PROMPT, _budget_history, build_messages, format_context
 from apps.rag.services.retrieval import RetrievedChunk
 
 
@@ -74,6 +74,34 @@ class BuildMessagesTests(SimpleTestCase):
         messages = build_messages("anything", [])
         self.assertEqual([m["role"] for m in messages], ["system", "user"])
         self.assertIn("(no relevant passages were found)", messages[1]["content"])
+
+    def test_history_over_budget_drops_the_oldest_turns_first(self):
+        history = [
+            {"role": "user", "content": "a" * 300},        # oldest - dropped
+            {"role": "assistant", "content": "b" * 300},    # kept
+            {"role": "user", "content": "c" * 300},         # newest - kept
+        ]
+        kept = _budget_history(history, budget_chars=700)
+        self.assertEqual(kept, history[1:])
+
+    def test_a_single_oversized_turn_is_still_kept_alone(self):
+        history = [{"role": "user", "content": "a" * 5000}]
+        self.assertEqual(_budget_history(history, budget_chars=100), history)
+
+    def test_history_under_budget_is_untouched(self):
+        history = [{"role": "user", "content": "short"}, {"role": "assistant", "content": "reply"}]
+        self.assertEqual(_budget_history(history, budget_chars=4000), history)
+
+    def test_build_messages_applies_the_history_budget(self):
+        history = [
+            {"role": "user", "content": "a" * 300},
+            {"role": "assistant", "content": "b" * 300},
+        ]
+        messages = build_messages("follow up", CHUNKS, history=history)
+        with self.settings(RAG_MAX_HISTORY_CHARS=100):
+            budgeted = build_messages("follow up", CHUNKS, history=history)
+        self.assertEqual(messages[1:-1], history)  # default budget: nothing dropped
+        self.assertEqual(budgeted[1:-1], history[-1:])  # tight budget: oldest dropped
 
     def test_snapshot(self):
         messages = build_messages("What is the capital of France?", CHUNKS)

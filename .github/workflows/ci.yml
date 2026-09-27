@@ -36,6 +36,15 @@ jobs:
           cache: "pip"
       - run: pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
       - run: python manage.py test
+      # Django's own production checklist - catches a settings regression
+      # (a missing security flag, a leaked debug default) that the test suite
+      # wouldn't. Needs a real-looking SECRET_KEY/ALLOWED_HOSTS since it's
+      # checking the DEBUG=False path, not this job's dev config.
+      - run: python manage.py check --deploy --fail-level WARNING
+        env:
+          DEBUG: "False"
+          SECRET_KEY: ci-only-placeholder-not-used-anywhere-real-1234567890
+          ALLOWED_HOSTS: example.com
 
   frontend:
     runs-on: ubuntu-latest
