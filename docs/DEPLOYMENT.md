@@ -93,8 +93,8 @@ much damage one client (or one bad actor) can do:
   one answer can't run generation out to the model's own limit and tie up a
   worker for the full `OLLAMA_READ_TIMEOUT`.
 - **`RAG_MAX_HISTORY_CHARS`** (default `4000`) — the client-supplied `history`
-  field is shaped by the serializer (10 turns, 2000 chars each) but that still
-  allows ~20,000 chars of prefill the model has to chew through before it can
+  field is shaped by the serializer (10 turns, 500 chars each) but that still
+  allows ~5,000 chars of prefill the model has to chew through before it can
   answer; this trims it to the most recent turns that fit, the same idea as
   `RAG_PROMPT_CONTEXT_CHARS` applied to retrieved passages.
 

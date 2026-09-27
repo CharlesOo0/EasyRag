@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.rag.models import Document
 
-MAX_QUESTION_CHARS = 2000
+MAX_QUESTION_CHARS = 500
 MAX_HISTORY_MESSAGES = 10
 
 

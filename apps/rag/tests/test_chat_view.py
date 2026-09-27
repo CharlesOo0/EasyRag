@@ -8,6 +8,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from apps.rag.models import Chunk, Document
+from apps.rag.serializers import MAX_QUESTION_CHARS
 from apps.rag.services.llm import OllamaError
 from apps.rag.services.retrieval import RetrievedChunk
 from apps.rag.views import _chat_slots
@@ -85,6 +86,16 @@ class ChatViewTests(APITestCase):
     def test_blank_question_rejected(self):
         response = self.client.post(self.url, {"question": "   "}, format="json")
         self.assertEqual(response.status_code, 400)
+
+    def test_question_over_the_char_limit_is_rejected(self):
+        response = self.client.post(
+            self.url, {"question": "a" * (MAX_QUESTION_CHARS + 1)}, format="json"
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_question_at_the_char_limit_is_accepted(self):
+        response, _ = self.run_chat(question="a" * MAX_QUESTION_CHARS)
+        self.assertEqual(response.status_code, 200)
 
     def test_endpoint_is_public(self):
         response, _ = self.run_chat()

@@ -240,8 +240,8 @@ RAG_TOP_K = int(os.getenv("RAG_TOP_K", 8))
 RAG_PROMPT_CONTEXT_CHARS = int(os.getenv("RAG_PROMPT_CONTEXT_CHARS", 2800))
 # Same idea, applied to the client-supplied `history` field: the retrieved
 # context above is budgeted, but history isn't shaped by retrieval at all -
-# the serializer only bounds it per-message (2000 chars) and by turn count
-# (10), which still allows ~20,000 chars of prefill the request budget above
+# the serializer only bounds it per-message (500 chars) and by turn count
+# (10), which still allows ~5,000 chars of prefill the request budget above
 # doesn't account for. build_messages() keeps the most recent turns that fit
 # under this many characters, oldest first to go.
 RAG_MAX_HISTORY_CHARS = int(os.getenv("RAG_MAX_HISTORY_CHARS", 4000))
