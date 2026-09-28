@@ -285,9 +285,13 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
       config` (Docker Desktop non lancé pour un vrai `up` cette fois) - le
       pattern lui-même (pas de redis, LocMemCache) avait déjà tourné avec
       succès sur la VM du test de charge.
-- [ ] Config prod restante dans `docker-compose.yml` (`SECRET_KEY`,
-      `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`,
-      `USE_X_FORWARDED_PROTO`, `TRUSTED_PROXY_COUNT`)
+- [x] Config prod restante - fait via `docker-compose.prod.yml` (surcharge,
+      pas modification du fichier de dev - `SECRET_KEY`/`ALLOWED_HOSTS`/
+      `CORS_ALLOWED_ORIGINS`/`CSRF_TRUSTED_ORIGINS` lus depuis l'environnement,
+      échec explicite si absents ; `DEBUG=False`, `USE_X_FORWARDED_PROTO=True`,
+      `TRUSTED_PROXY_COUNT=1` en dur) + `.env.prod.example`. Fusion vérifiée
+      via `docker compose config` (échec loud sans valeurs, résolution
+      correcte avec).
 - [ ] Acheter/configurer le domaine, pointer le DNS
 - [ ] TLS (Let's Encrypt via le reverse-proxy, ex. Caddy) devant l'app
 - [ ] Déployer pour de vrai, vérifier `/chat` et `/corpus` en bout en bout sur
