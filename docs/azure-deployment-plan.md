@@ -303,18 +303,50 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
       directement par un visiteur). Le tronçon gardien -> VM
       (`GUARDIAN_VM_ORIGIN`) reste en HTTP simple, à restreindre côté NSG
       aux IP sortantes d'Azure Container Apps plutôt qu'à chiffrer.
-- [ ] Domaine choisi : **`easyrag.dev`** (Namecheap, ~11 $/an) - achat
-      encore à faire par l'utilisateur. **Dépendance à noter** : les
-      enregistrements DNS exacts (TXT de vérification, CNAME) ne peuvent
-      être générés qu'une fois une vraie Container App persistante
-      déployée (celles utilisées jusqu'ici étaient jetables) - donc pas une
-      étape isolée avant le déploiement réel, mais faite en même temps que
-      lui (item suivant).
-- [ ] Déployer pour de vrai (Container App persistante + vraie VM prod) :
-      attacher le domaine une fois acheté, poser les enregistrements DNS
-      qu'Azure donnera à ce moment-là sur Namecheap, laisser Azure émettre
-      le certificat, vérifier `/chat` et `/corpus` en bout en bout sur
-      l'URL publique
+- [x] Domaine acheté : **`easyrag.dev`** (Namecheap, ~11 $/an, renouvellement
+      auto à vérifier par l'utilisateur).
+- [x] **Déploiement réel effectué (28/09/2026)** - VM de prod persistante
+      (`easyrag-prod-vm`, `D2ps_v6`), Caddy + vrai build frontend (SSR)
+      ajoutés (manquaient totalement avant - voir commits du jour),
+      gardien persistant déployé (`easyrag-guardian`, stockage + ACR
+      dédiés), RBAC + probes appliqués dès le départ (leçon du test
+      jetable de la veille). Base restaurée depuis le dump local (6333
+      chunks, idempotent confirmé). Testé de bout en bout (accueil, corpus,
+      chat en streaming réel) via l'IP de la VM et via le gardien.
+
+  **Trois bugs réels trouvés en déployant pour de vrai** (aucun n'était
+  visible sur les tests jetables précédents) :
+  - `VITE_API_URL` jamais transmis au build prod du front (baké en dur
+    depuis un `.env` local non versionné) - corrigé par un `ARG` explicite
+    dans `front/Dockerfile`, échec loud si absent.
+  - Redirection HTTPS en boucle : Caddy fixe `X-Forwarded-Proto` sur sa
+    propre connexion (toujours `http`, il n'a pas de TLS) au lieu de
+    refléter que la requête réelle venait bien de HTTPS via le gardien -
+    corrigé en le forçant en dur dans le `Caddyfile` (fiable ici
+    précisément parce que seul le gardien peut atteindre ce port).
+  - **Le plus important** : aucun conteneur ne redémarre après un cycle
+    extinction/rallumage de la VM - `dockerd` ne relance au boot que ce qui
+    a une vraie politique `restart`, indépendamment de `depends_on`.
+    Confirmé cassé (tout en `Exited (0)` après le premier réveil réel),
+    corrigé (`restart: unless-stopped` sur les 5 services longue durée,
+    `bootstrap` volontairement exclu), re-testé avec un vrai cycle
+    extinction/rallumage de la VM (pas juste Docker) - tout revient sain.
+
+  **Sécurité posée** : SSH + port Caddy (8080) restreints par NSG - SSH à
+  mon IP, 8080 à la plage d'IP sortantes de l'environnement Container Apps
+  (`portfolio-env`, partagé - pas une IP dédiée à ce seul gardien, limite
+  connue : n'importe quelle Container App du même environnement pourrait
+  théoriquement l'atteindre, pas seulement le gardien. Accepté comme
+  compromis pour ce projet, pas une vraie exposition puisque l'app est
+  publique sans authentification de toute façon).
+
+- [ ] Attacher `easyrag.dev` à `easyrag-guardian` (Container App
+      persistante, existe maintenant) - récupérer les enregistrements DNS
+      exacts, les poser sur Namecheap, attendre l'émission du certificat.
 - [ ] Suivre le tout premier boot complet (ingestion du corpus, pull du modèle
       Ollama) jusqu'au bout, comme `docker compose logs -f bootstrap` en local
+      - **fait indirectement** aujourd'hui via le dump restauré + vérification
+      idempotente (`0 created, 0 updated, 195 unchanged`), pas un vrai premier
+      boot à froid sans dump - à garder à l'esprit si jamais la VM devait être
+      reconstruite entièrement from scratch un jour.
 - [ ] Adapter `docs/DEPLOYMENT.md` avec le chemin Azure réel (pas hypothétique)
