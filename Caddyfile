@@ -1,0 +1,28 @@
+# Single origin for the guardian to proxy to (GUARDIAN_VM_ORIGIN) - it only
+# knows one address, so frontend and backend must sit behind one port here.
+# No TLS config here on purpose: the guardian/Container App terminates TLS
+# on the public domain (see docs/azure-deployment-plan.md "Décision TLS"),
+# this only ever sees plain HTTP from the guardian.
+# No proxy_buffering-style setting needed for SSE (/api/rag/chat/) either -
+# unlike nginx, Caddy's reverse_proxy doesn't buffer by default.
+# USE_X_FORWARDED_PROTO=True (docker-compose.prod.yml) makes Django trust
+# X-Forwarded-Proto to decide whether to force an HTTPS redirect. Caddy's
+# reverse_proxy sets that header from its OWN connection's scheme by
+# default - which is always http here, since this listens on plain :8080
+# with no TLS - overwriting whatever the real client actually used. Only
+# the guardian can reach this port (NSG-restricted), and the guardian is
+# only ever reached over HTTPS (Container Apps ingress), so every request
+# here genuinely did arrive as https - hardcode it rather than trust a
+# passed-through header that Caddy would otherwise clobber anyway.
+:8080 {
+	handle /api/* {
+		reverse_proxy backend:8000 {
+			header_up X-Forwarded-Proto https
+		}
+	}
+	handle {
+		reverse_proxy frontend:3000 {
+			header_up X-Forwarded-Proto https
+		}
+	}
+}

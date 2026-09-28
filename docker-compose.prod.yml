@@ -1,6 +1,10 @@
 # Production overrides for docker-compose.yml - see docs/DEPLOYMENT.md
-# "Simplest path" for the full picture (TLS proxy in front, frontend built
-# and served separately - neither is part of this file).
+# "Simplest path" for the full picture. Swaps the frontend's dev server for
+# a real SSR build (react-router-serve) and adds Caddy in front of it and
+# the backend - the guardian (Container App) only knows one address
+# (GUARDIAN_VM_ORIGIN), so both must sit behind one port here. TLS is
+# terminated at the guardian, not here - see "Décision TLS" in
+# docs/azure-deployment-plan.md.
 #
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
@@ -34,3 +38,46 @@ services:
   backend:
     environment:
       <<: *prod-env
+    # Dev publishes 8000 straight to the host for local access - in prod
+    # only Caddy talks to it, over the compose network.
+    ports: !reset []
+
+  frontend:
+    build:
+      context: ./front
+      # The final stage - a real SSR build served by react-router-serve,
+      # not the dev-server target the base file uses.
+      target: production
+      args:
+        # Same-origin relative path: correct whether reached directly or
+        # via the guardian in front, whatever domain ends up in the URL bar.
+        VITE_API_URL: /api
+    command: null
+    volumes: !reset []
+    ports: !reset []
+    environment: !reset []
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  ollama:
+    # Dev exposes this so the model can be poked at directly from the host;
+    # in prod only the backend needs it, over the compose network - no
+    # reason to publish it (Ollama has no auth of its own).
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddyfile:ro
+    command: ["caddy", "run", "--config", "/etc/caddyfile", "--adapter", "caddyfile"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
