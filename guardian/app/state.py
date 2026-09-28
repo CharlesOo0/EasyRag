@@ -98,11 +98,14 @@ class TableStateStore(StateStore):
     complexity of the async table client isn't worth it yet. Revisit if
     traffic ever grows enough for this to matter.
 
-    The `... eq null` filters below (for "find the open session") rely on
-    Table Storage's documented behavior of matching entities where a
-    property is absent - not exercised against a real Storage account in
-    this codebase, only unit-tested against InMemoryStateStore. Smoke-test
-    this against a real table before relying on it.
+    "Find the open session" is done by fetching the (small) session
+    partition and filtering client-side, not via an OData filter - an
+    earlier version tried `End eq null` server-side, which a real Table
+    Storage account rejects with 400 InvalidInput (caught by smoke_test.py
+    before this went anywhere near production). Client-side filtering over
+    a whole partition is fine at this app's scale (a session log of maybe a
+    few hundred rows a year), so there was no need to chase the "correct"
+    server-side syntax.
     """
 
     def __init__(self, account_name: str, table_name: str) -> None:
@@ -149,14 +152,16 @@ class TableStateStore(StateStore):
             pass
 
     def close_open_session(self, end: datetime) -> None:
-        entities = list(
-            self._table.query_entities(f"PartitionKey eq '{_SESSION_PARTITION}' and End eq null")
-        )
+        # `End eq null` is NOT valid Table Storage OData (confirmed against a
+        # real account: 400 InvalidInput) - filter client-side instead, same
+        # as open_session()'s own open-session check just below.
+        entities = self._table.query_entities(f"PartitionKey eq '{_SESSION_PARTITION}'")
+        open_entities = [e for e in entities if not e.get("End")]
         # There should be exactly one open session; if bookkeeping ever
         # drifted and there is more than one, close all of them rather than
         # silently leaving one open (open sessions count as still-running
         # time forever, which is the unsafe direction to fail in).
-        for e in entities:
+        for e in open_entities:
             e["End"] = end
             self._table.update_entity(e, mode=UpdateMode.MERGE)
 
