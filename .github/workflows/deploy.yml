@@ -43,6 +43,21 @@ jobs:
       # no SSH port needs to be open to GitHub's runner IP ranges for this.
       # A few retries: the VM agent can take a short while to start accepting
       # commands right after boot.
+      #
+      # Script details, each one a real bug hit testing this manually before
+      # trusting it in CI:
+      #   - `git -c safe.directory=...`: run-command executes as root, but
+      #     the clone is owned by azureuser - git refuses to touch a repo it
+      #     doesn't own unless told this exact directory is trusted.
+      #   - `reset --hard FETCH_HEAD`, not `origin/master`: the VM's clone is
+      #     a shallow, single-branch clone (whatever branch it was first set
+      #     up on) - there's no local `origin/master` tracking ref to reset
+      #     to, but FETCH_HEAD always exists right after a fetch.
+      #   - `chmod +x`: the bind-mounted source overwrites entrypoint.sh's
+      #     executable bit on every fresh clone.
+      #   - `. ./.env.prod`, not `source .env.prod`: run-command's shell is
+      #     dash, not bash - `source` doesn't exist, and POSIX `.` without a
+      #     leading `./` searches $PATH instead of the current directory.
       - name: Pull and redeploy on the VM
         run: |
           for i in $(seq 1 5); do
@@ -50,7 +65,7 @@ jobs:
               --resource-group easyrag-prod-rg \
               --name easyrag-prod-vm \
               --command-id RunShellScript \
-              --scripts "cd /home/azureuser/app && git fetch origin master && git reset --hard origin/master && set -a && source .env.prod && set +a && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build" \
+              --scripts "cd /home/azureuser/app && git -c safe.directory=/home/azureuser/app fetch origin master && git -c safe.directory=/home/azureuser/app reset --hard FETCH_HEAD && chmod +x entrypoint.sh scripts/bootstrap.sh && set -a && . ./.env.prod && set +a && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build" \
               --query "value[0].message" -o tsv; then
               exit 0
             fi
