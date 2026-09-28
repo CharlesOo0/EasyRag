@@ -190,7 +190,10 @@ async def lifespan(app: FastAPI):
         task.cancel()
 
 
-app = FastAPI(lifespan=lifespan)
+# docs/redoc/openapi disabled: this is a transparent reverse proxy, and
+# FastAPI's auto-generated routes for them would otherwise register before
+# the catch-all and shadow those same paths on the proxied app.
+app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 
 @app.get("/internal/healthz")
