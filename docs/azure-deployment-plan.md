@@ -279,9 +279,24 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
       React pré-existant sur `/chat` (`lang="fr"` vs `lang="fr-FR"`, le
       bouton de langue FR/EN affiché ne correspond pas au SSR) - repéré en
       testant, pas corrigé ici (hors sujet du gardien), à traiter à part.
-- [ ] Rattacher l'Action Group du budget existant au webhook
-      `POST /internal/budget-alert` du gardien (actuellement `contactGroups`
-      vide, alerte email seule).
+- [x] **Action Group rattachée au budget (28/09/2026)** - `GuardianBudgetCutoff`
+      créée (action webhook vers `/internal/budget-alert?token=...`, testée :
+      refuse sans/avec mauvais token, accepte avec le bon, pose bien
+      `budget_exceeded_at`). Token posé sur le gardien
+      (`GUARDIAN_BUDGET_WEBHOOK_TOKEN`, nouvelle révision). Rattachée aux
+      seuils 80% et 90% (90% en plus, redondant avec 80% mais sans effet
+      négatif).
+
+  **Bug de plateforme Azure trouvé** : impossible d'attacher l'Action
+  Group via CLI/API REST - `PUT`/`create` échouent systématiquement avec
+  `"Invalid budget configuration, please use filter interface with
+  2019-05-01-preview version"`, y compris pour un `PUT` byte-à-byte
+  identique au budget déjà existant, et y compris avec `2019-05-01-preview`
+  lui-même (qui n'est pourtant pas listé comme version supportée -
+  message d'erreur incohérent). Fait via le **portail Azure** à la place -
+  a fonctionné du premier coup, confirmant que c'est bien un bug/chemin
+  cassé de l'API publique pour cette souscription, pas une erreur de
+  configuration de mon côté.
 - [x] Retirer `redis` de `docker-compose.yml` (service, dépendance du
       backend, volume, `REDIS_URL`) - fait (28/09/2026), `README.md` et
       `CLAUDE.md` mis à jour en cohérence. Validé par `docker compose
