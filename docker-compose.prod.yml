@@ -53,6 +53,18 @@ services:
     # only Caddy talks to it, over the compose network.
     ports: !reset []
     restart: unless-stopped
+    healthcheck:
+      # Base file's start_period (20s) is marginal on the D2ps_v6 prod VM -
+      # observed the embedding model's cold load (see gunicorn --preload in
+      # core/wsgi.py) taking ~40-45s there after a real reboot, briefly
+      # showing "unhealthy" before settling. Harmless on its own (a failed
+      # healthcheck doesn't restart a container by itself), but no reason
+      # to leave a false-negative window this wide.
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 8000), timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   frontend:
     build:
