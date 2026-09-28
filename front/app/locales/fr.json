@@ -26,11 +26,18 @@
     "incomplete": "La connexion a été coupée avant la fin de la réponse.",
     "emptyResponse": "Le modèle n'a rien renvoyé.",
     "retry": "Réessayer",
+    "waking": {
+      "coldStart": "Le serveur démarre (~1-3 minutes)",
+      "evicted": "Redémarrage après une interruption temporaire"
+    },
     "error": {
       "network": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
       "throttled": "Trop de requêtes — patientez un instant et réessayez.",
       "server": "Le serveur a rencontré une erreur pendant la génération.",
-      "badRequest": "Cette question n'a pas pu être traitée."
+      "badRequest": "Cette question n'a pas pu être traitée.",
+      "hourCap": "Le quota d'utilisation de ce mois est atteint. Réessayez le mois prochain.",
+      "budget": "Le budget de ce mois est atteint. Réessayez le mois prochain.",
+      "wakingTimeout": "Le serveur met trop de temps à démarrer. Réessayez dans quelques instants."
     },
     "sources_one": "{{count}} source",
     "sources_other": "{{count}} sources",

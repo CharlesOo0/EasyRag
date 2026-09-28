@@ -24,7 +24,7 @@ account: the chat endpoint is open.
 - **RAG**: pgvector · `sentence-transformers` (`paraphrase-multilingual-MiniLM-L12-v2`, 384d) · Ollama (`llama3.2:3b`)
 - **Backend**: Django 6 + Django REST Framework
 - **Frontend**: React Router v8 (framework mode), TypeScript, Tailwind v4, shadcn/radix-ui
-- **Infra**: Docker Compose (Postgres+pgvector, Redis, backend, frontend, Ollama)
+- **Infra**: Docker Compose (Postgres+pgvector, backend, frontend, Ollama)
 
 ## Quick start (Docker)
 
@@ -33,7 +33,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Starts Postgres+pgvector, Redis, Ollama (`:11434`), the backend (`:8000`) and
+Starts Postgres+pgvector, Ollama (`:11434`), the backend (`:8000`) and
 the frontend (`:5173`). A one-shot `bootstrap` service migrates the DB, pulls
 the generation model and ingests the corpus before the backend comes up:
 
@@ -94,7 +94,7 @@ Backend (`.env`, see `.env.example`):
 | `DEBUG` | `True` for local dev; defaults to `False`. |
 | `ALLOWED_HOSTS` | Comma-separated, required when `DEBUG=False`. |
 | `DATABASE_URL` | Postgres connection string; the DB must have pgvector available. Falls back to sqlite (no vector search). |
-| `REDIS_URL` | Shared cache for request throttling. Falls back to in-memory (single process only). |
+| `REDIS_URL` | Optional shared cache for request throttling across >1 worker. Not set by `docker-compose.yml` (the app runs a single worker by design); falls back to in-memory. |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated origins allowed to call the API. |
 | `OLLAMA_URL` | Ollama base URL. Defaults to `http://localhost:11434`. |
 | `RAG_LLM_MODEL` | Ollama model. Defaults to `llama3.2:3b`. |

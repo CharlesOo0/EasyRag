@@ -26,14 +26,30 @@ export type ChatEvent =
   | { type: "done" }
   | { type: "error"; detail: string };
 
-export type StreamErrorKind = "network" | "throttled" | "server" | "bad-request";
+export type StreamErrorKind =
+  | "network"
+  | "throttled"
+  | "server"
+  | "bad-request"
+  // The guardian (see guardian/README.md "Contrat de réponse") refused to
+  // wake the target VM - retrying immediately would just get refused again.
+  | "hour-cap"
+  | "budget"
+  // The guardian kept saying "waking up" past MAX_WAKING_SECONDS in hooks.ts.
+  | "waking-timeout";
+
+/** Why the guardian is (re)starting the target VM - see guardian/app/pages.py. */
+export type WakingReason = "cold_start" | "evicted";
 
 /** How a stream ended. */
 export type StreamResult =
   | { status: "done" }
   | { status: "aborted" }
   | { status: "incomplete" } // connection closed before the `done` event
-  | { status: "error"; kind: StreamErrorKind; detail: string };
+  | { status: "error"; kind: StreamErrorKind; detail: string }
+  // The guardian is waking the target VM - not an error, the caller should
+  // wait `retryAfter` seconds and send the exact same request again.
+  | { status: "waking"; reason: WakingReason; retryAfter: number };
 
 export interface ChatMessage {
   id: string;
@@ -43,6 +59,8 @@ export interface ChatMessage {
   sources?: ChatSource[];
   /** Set when the stream failed. */
   error?: { kind: StreamErrorKind; detail: string };
+  /** The guardian is (re)starting the target VM - see StreamResult["waking"]. */
+  waking?: { reason: WakingReason };
   /** The user pressed Stop. */
   stopped?: boolean;
   /** The connection dropped mid-answer. */

@@ -1,9 +1,12 @@
 # Env shared by the backend server and the one-shot bootstrap job.
+# No REDIS_URL: the app runs gunicorn with a single worker by design (the
+# RAG_MAX_CONCURRENT_CHATS semaphore is in-process, wouldn't work shared
+# across workers anyway), so Django's LocMemCache does exactly the same job
+# as Redis would - one process, one cache, no separate container needed.
 x-backend-env: &backend-env
   DEBUG: "True"
   SECRET_KEY: django-insecure-dev-key
   DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-postgres}
-  REDIS_URL: redis://redis:6379/1
   ALLOWED_HOSTS: localhost,127.0.0.1,backend
   CORS_ALLOWED_ORIGINS: http://localhost:5173
   OLLAMA_URL: http://ollama:11434
@@ -22,16 +25,6 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -84,8 +77,6 @@ services:
     depends_on:
       bootstrap:
         condition: service_completed_successfully
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 8000), timeout=2)"]
       interval: 10s
@@ -120,6 +111,5 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:
   static_volume:
   ollama_data:

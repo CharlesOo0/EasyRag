@@ -223,8 +223,10 @@ RAG_MAX_TOKENS = int(os.getenv("RAG_MAX_TOKENS", 600))
 # threads over one Ollama instance that itself processes one generation at a
 # time by default, so past a small number every extra concurrent request just
 # waits behind the others anyway - better to say so than to hold the
-# connection open and hope.
-RAG_MAX_CONCURRENT_CHATS = int(os.getenv("RAG_MAX_CONCURRENT_CHATS", 4))
+# connection open and hope. Measured against the deploy target (2 vCPU, see
+# docs/azure-deployment-plan.md): 4 concurrent generations pushed 2 of them
+# past the 120s Ollama read timeout, 2 stayed well within it.
+RAG_MAX_CONCURRENT_CHATS = int(os.getenv("RAG_MAX_CONCURRENT_CHATS", 2))
 # Must be a 384-dim model - the value is baked into rag.Chunk.embedding
 # (apps/rag/models.py EMBEDDING_DIMENSIONS). e5 models want their inputs
 # prefixed ("query: " / "passage: "); the embedding service applies these.

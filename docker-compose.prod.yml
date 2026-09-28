@@ -1,0 +1,113 @@
+# Production overrides for docker-compose.yml - see docs/DEPLOYMENT.md
+# "Simplest path" for the full picture. Swaps the frontend's dev server for
+# a real SSR build (react-router-serve) and adds Caddy in front of it and
+# the backend - the guardian (Container App) only knows one address
+# (GUARDIAN_VM_ORIGIN), so both must sit behind one port here. TLS is
+# terminated at the guardian, not here - see "Décision TLS" in
+# docs/azure-deployment-plan.md.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Every value below comes from the environment (a real .env file on the
+# target host, never committed) - nothing here is a usable default. The
+# required ones (SECRET_KEY, ALLOWED_HOSTS, CORS_ALLOWED_ORIGINS,
+# CSRF_TRUSTED_ORIGINS) fail the deploy loudly if left unset instead of
+# silently starting insecure.
+#
+# Compose doesn't share YAML anchors across files, so the same block is
+# repeated for bootstrap and backend (they share `x-backend-env` in the
+# base file, but only within that one file).
+
+x-prod-env: &prod-env
+  DEBUG: "False"
+  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set for production - see docs/DEPLOYMENT.md}
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS:?ALLOWED_HOSTS must be set for production - see docs/DEPLOYMENT.md}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS must be set for production - see docs/DEPLOYMENT.md}
+  CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?CSRF_TRUSTED_ORIGINS must be set for production - see docs/DEPLOYMENT.md}
+  # True behind the TLS-terminating proxy from the "Domaine + TLS" step
+  # (docs/azure-deployment-plan.md) - required or the HTTPS redirect loops.
+  USE_X_FORWARDED_PROTO: "True"
+  # One proxy hop in front (Caddy) - see docs/DEPLOYMENT.md's warning on why
+  # this must not be left at the dev default of 0.
+  TRUSTED_PROXY_COUNT: "1"
+
+services:
+  # db, ollama, backend, frontend, caddy all get restart: unless-stopped -
+  # the guardian deallocates/starts this whole VM on a schedule (that's the
+  # point), and none of these come back on their own otherwise: dockerd
+  # itself only auto-starts a container on daemon boot if its restart
+  # policy says to, regardless of compose's depends_on (that's a `docker
+  # compose up`-time concept, not something the daemon enforces on its
+  # own). Confirmed missing the hard way: after the first real wake in
+  # prod, every container was sitting "Exited (0)" - the VM was up, the
+  # app wasn't. bootstrap is deliberately excluded: it's one-shot
+  # (migrate/model/corpus), already applied and persisted in the volumes,
+  # nothing depends on it running again on every wake.
+  bootstrap:
+    environment:
+      <<: *prod-env
+  backend:
+    environment:
+      <<: *prod-env
+    # Dev publishes 8000 straight to the host for local access - in prod
+    # only Caddy talks to it, over the compose network.
+    ports: !reset []
+    restart: unless-stopped
+    healthcheck:
+      # Base file's start_period (20s) is marginal on the D2ps_v6 prod VM -
+      # observed the embedding model's cold load (see gunicorn --preload in
+      # core/wsgi.py) taking ~40-45s there after a real reboot, briefly
+      # showing "unhealthy" before settling. Harmless on its own (a failed
+      # healthcheck doesn't restart a container by itself), but no reason
+      # to leave a false-negative window this wide.
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 8000), timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./front
+      # The final stage - a real SSR build served by react-router-serve,
+      # not the dev-server target the base file uses.
+      target: production
+      args:
+        # Same-origin relative path: correct whether reached directly or
+        # via the guardian in front, whatever domain ends up in the URL bar.
+        VITE_API_URL: /api
+    command: null
+    volumes: !reset []
+    ports: !reset []
+    environment: !reset []
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  db:
+    restart: unless-stopped
+
+  ollama:
+    # Dev exposes this so the model can be poked at directly from the host;
+    # in prod only the backend needs it, over the compose network - no
+    # reason to publish it (Ollama has no auth of its own).
+    ports: !reset []
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddyfile:ro
+    command: ["caddy", "run", "--config", "/etc/caddyfile", "--adapter", "caddyfile"]
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
