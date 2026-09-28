@@ -265,10 +265,18 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
 - [ ] Déploiement définitif : pointer le gardien sur la vraie VM de prod
       une fois celle-ci stabilisée (docker-compose prod, domaine, TLS -
       items suivants), pas une VM jetable sans stack applicative.
-- [ ] Côté front, consommer le contrat de réponse du gardien
-      (`guardian/README.md` § "Contrat de réponse") : messages dédiés pour
-      démarrage en cours, éviction Spot, plafond atteint - distinct du 429
-      de `RAG_MAX_CONCURRENT_CHATS` qui existe déjà côté backend.
+- [x] Côté front, consommer le contrat de réponse du gardien - fait
+      (`front/app/features/chat/{api,hooks,message,types}.ts`) : réveil à
+      froid et après éviction traités par une attente + nouvelle tentative
+      automatique (jusqu'à ~4 min), plafond/budget affichés sans bouton
+      "réessayer" (inutile, ça rejouerait le même refus). Testé dans un
+      vrai navigateur contre un petit serveur factice reproduisant le
+      contrat du gardien - un bug réel trouvé et corrigé au passage
+      (l'indicateur "démarrage" restait affiché après l'arrivée des vrais
+      tokens). **Trouvaille séparée, sans rapport** : un bug de hydration
+      React pré-existant sur `/chat` (`lang="fr"` vs `lang="fr-FR"`, le
+      bouton de langue FR/EN affiché ne correspond pas au SSR) - repéré en
+      testant, pas corrigé ici (hors sujet du gardien), à traiter à part.
 - [ ] Rattacher l'Action Group du budget existant au webhook
       `POST /internal/budget-alert` du gardien (actuellement `contactGroups`
       vide, alerte email seule).
