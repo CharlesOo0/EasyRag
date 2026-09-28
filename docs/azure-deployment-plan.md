@@ -99,21 +99,141 @@ directement (formulaire lié à son compte). Pas garanti que ce soit approuvé
 rapidement, ou approuvé du tout, sur un compte étudiant gratuit - à voir une
 fois la demande soumise.
 
+## Blocage rencontré (27/09/2026, suite) - restriction de capacité générique après upgrade PAYG
+
+Après upgrade réussi de "Azure for Students" vers Pay-As-You-Go (`quotaId`
+passé à `PayAsYouGo_2014-09-01`, `spendingLimit: Off`, confirmé via l'API
+ARM), et après enregistrement des providers `Microsoft.Compute` /
+`Microsoft.Network` / `Microsoft.Storage` / `Microsoft.Quota` (aucun n'était
+enregistré, ce qui bloquait aussi les lectures de quota) :
+
+- Le quota (`az vm list-usage`) est bien débloqué à 10 vCPU sur presque
+  toutes les familles, dans les 5 régions autorisées par la policy - sauf
+  `Standard DSv5 Family` (toujours à 0). Une demande d'augmentation via
+  l'API `Microsoft.Quota` a échoué avec `QuotaNotAvailableForResource` :
+  cette famille précise est fermée par policy sur ce compte, pas de recours
+  en libre-service.
+- **Toute tentative de création de VM échoue avec `SkuNotAvailable /
+  Capacity Restrictions`**, quelle que soit la taille (`Standard_B2ms`,
+  `Standard_D2s_v3`, jusqu'à `Standard_B1s` - la plus petite taille
+  possible) et quelle que soit la région parmi les 5 autorisées. B1s
+  échouant partout élimine l'hypothèse d'une vraie pénurie de capacité
+  datacenter (improbable que B1s soit indisponible dans 5 régions à la
+  fois).
+  **Correctif important** : cette même erreur sur `Standard_B1s` était déjà
+  documentée dans le tout premier blocage (section précédente de ce
+  document, testé avant tout changement d'aujourd'hui) - ce n'est donc PAS
+  causé par l'upgrade PAYG ni par l'enregistrement des providers. La
+  restriction préexiste, indépendante du type de souscription. Cause encore
+  inconnue (compte, tenant de facturation UTBM, pays associé ?) - hypothèse
+  "retenue anti-fraude post-upgrade" écartée, contredite par les faits.
+- Aucune ressource facturable créée par ces tentatives (échecs en
+  pré-validation ARM, avant provisioning du disque/NIC/IP) - `az resource
+  list` sur `easyrag-loadtest-rg` est vide. Groupe de ressources vide laissé
+  en place pour la prochaine tentative.
+
+**Deux souscriptions actives découvertes sur le compte** (à garder en tête,
+source de confusion sinon) :
+- `Azure for Students` (`8ac0a59e-...`) : celle utilisée ci-dessus, bien en
+  PAYG maintenant.
+- `Azure subscription 1` (`6df093a4-...`) : souscription **distincte**,
+  créée séparément pendant la même démarche d'upgrade, quotaId
+  `FreeTrial_2014-09-01`, et actuellement **`ReadOnlyDisabledSubscription`**
+  (désactivée en écriture côté ARM malgré un état "Actif" affiché dans le
+  portail) - inutilisable en l'état, cause non identifiée.
+
+**Comparaison DigitalOcean écartée** : tarif proche (48 $/mois pour l'équi-
+valent 4 vCPU/8 Go), mais modèle de facturation incompatible avec le pattern
+réveil/extinction du plan - chez DO un droplet éteint reste facturé en
+entier, seule la destruction complète arrête la facturation. Azure reste la
+bonne cible malgré les blocages actuels.
+
+**Prochaine étape réelle** : contacter le support Azure (portail -> Aide +
+support -> nouvelle demande, catégorie facturation/abonnement) au sujet de
+la restriction de capacité générique - présente sur le compte depuis avant
+l'upgrade, donc pas liée au changement de plan - et vérifier en parallèle
+pourquoi `Azure subscription 1` est désactivée. Rien d'autre ne peut avancer
+côté provisioning tant que l'un des deux n'est pas résolu.
+
+## Test de charge réel (27-28/09/2026) - résultat
+
+Réalisé sur `Standard_D2ps_v6` (2 vCPU/8 Go, ARM64, Spot, France Central) -
+le blocage de capacité générique documenté plus haut n'affectait pas cette
+taille précise, testée avec succès via le portail par l'utilisateur puis
+reproduite en CLI. Stack déployée sans Redis (LocMemCache, conforme à la
+décision plus haut) ni frontend (hors scope du test). Base de données
+pré-vectorisée transférée depuis le poste local (`pg_dump`/`pg_restore`,
+6333 chunks) pour éviter de refaire l'ingestion sur la VM - `ingest_corpus`
+confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
+
+- **RAM : non-problème.** Pic mesuré sous charge (4 requêtes simultanées) :
+  ~4,5 Go / 7,7 Go utilisés (Ollama ~3,1 Go, backend ~0,77 Go, Postgres
+  ~80 Mo). Grosse marge, aucun swap. 8 Go est confortable, presque
+  surdimensionné côté mémoire seule.
+- **CPU : le vrai facteur limitant, pas anticipé comme tel.** Sur 4
+  requêtes vraiment simultanées, Ollama a saturé les 2 vCPU en continu
+  (~200%) et **2 des 4 requêtes ont dépassé le timeout de lecture de 120s**
+  côté backend (`OllamaError: Read timed out`) - échec net, pas juste un
+  ralentissement. Une requête seule répond correctement en ~3,7s (~6-7
+  tokens/s de génération, CPU pur).
+- **Décision appliquée** : `RAG_MAX_CONCURRENT_CHATS` baissé de 4 à 2
+  (`core/settings.py`, `.env.example`) pour matcher la capacité réelle
+  mesurée sur 2 vCPU, plutôt que de laisser des requêtes échouer
+  silencieusement au-delà. Passer à 4 vCPU (B4ms/D4ps_v6) reste une option
+  si la limite à 2 s'avère trop stricte en usage réel, mais pas retenu par
+  défaut - pas de gain mesuré qui le justifie pour l'instant.
+- VM de test détruite immédiatement après (`easyrag-loadtest-rg` supprimé),
+  aucune ressource restante, facturation arrêtée.
+
 ## Ce qui reste à faire, dans l'ordre
 
-- [ ] **Bloquant** : demander une augmentation de quota VM (portail Azure,
-      voir ci-dessus) - rien d'autre n'avance tant que ça n'est pas débloqué
-- [ ] Confirmer si "Azure for Students" a un plafond de dépense intégré (portail)
+- [x] Demander une augmentation de quota VM - fait, mais refusée
+      (`QuotaNotAvailableForResource` sur DSv5, définitif) ; sans objet
+      pour B-series qui a déjà 10 vCPU de quota.
+- [x] ~~Bloquant : restriction de capacité générique~~ - **infirmé** : la
+      restriction n'est finalement pas générique au compte. `Standard_D2ps_v6`
+      (ARM64, voir test de charge ci-dessous) a été créée sans problème en
+      France Central, alors que B2ms/D2s_v3/B1s y échouent toujours à ce
+      jour. C'est donc une restriction par famille de SKU (anciennes
+      générations x86 + B-series), pas un blocage du compte entier -
+      corrige l'hypothèse notée plus haut le 27/09.
+- [x] Confirmer si "Azure for Students" a un plafond de dépense intégré -
+      non : passé en PAYG, `spendingLimit: Off` confirmé via l'API.
 - [ ] Rattacher une Action Group au budget existant
-- [ ] **Test de charge réel** : provisionner une VM D2s_v5 temporaire, déployer
-      la stack (sans Redis), envoyer 4 requêtes de chat simultanées, observer
-      la RAM réelle (`free -h`, `docker stats`) - objectif : remplacer
-      l'estimation par une mesure. Si ça sature -> repli sur D4s_v5, sans
-      changement significatif du coût final vu le modèle "payé à l'heure".
-- [ ] Une fois la taille de VM confirmée : construire le "gardien" (Container
-      App) - démarrage/extinction de la VM, page d'attente, plafond d'heures
-      codé en dur (30-40h/mois de marge, recalculé sur une vraie hypothèse de
-      trafic recruteur - pas les 150h lancés en l'air au départ)
+- [x] **Test de charge réel** - fait sur `Standard_D2ps_v6` (voir section
+      dédiée ci-dessus) : RAM ok (~4,5/7,7 Go), CPU limitant (2/4 requêtes
+      simultanées en timeout) -> `RAG_MAX_CONCURRENT_CHATS` baissé à 2.
+- [ ] Choisir la taille de VM cible pour la prod entre `D2ps_v6` (ARM,
+      Spot dispo, le moins cher de loin, mais nécessite de valider le build
+      arm64 des images en conditions réelles - fait une fois pour le test,
+      pas encore éprouvé sur la durée) et `B2ms`/`D2s_v5` classiques
+      (x86, si un jour débloqués - quota DSv5 fermé, capacité B2ms à
+      revérifier périodiquement).
+- [x] Code du "gardien" écrit (`guardian/`, FastAPI) : réveil/extinction de
+      la VM, page d'attente, détection d'éviction Spot, plafond d'heures
+      dur (refus, pas juste alerte), flag budget avec expiration
+      automatique au changement de mois. Logique de décision (`guard_logic.py`)
+      testée unitairement (44 tests, cas limites de plafond/rollover
+      mensuel/concurrence couverts) - voir `guardian/README.md` pour les
+      contraintes de déploiement (1 seule réplique, identité managée).
+      **Pas encore vérifié contre de vrais Azure Table Storage/Compute** -
+      seulement contre des doublures en mémoire.
+      `GUARDIAN_MAX_MONTHLY_HOURS` **tranché à 40h** (28/09/2026) - au tarif
+      Spot ARM (0,01515 $/h, `D2ps_v6`), l'écart de coût entre 10h et 40h
+      est ~0,15 $/mois (plancher fixe IP+disque ~6,6 $ qui domine largement) :
+      le plafond n'est donc plus un levier de coût, juste une marge de
+      sécurité contre un usage anormal. ~7,23 $/mois (~6,35 €) au pire cas
+      (plafond atteint chaque mois). Valeur posée dans `guardian/.env.example`.
+- [ ] Déployer le gardien (Container App, identité managée + rôles RBAC,
+      compte de stockage pour l'état) et le tester en conditions réelles
+      contre la VM `D2ps_v6`.
+- [ ] Côté front, consommer le contrat de réponse du gardien
+      (`guardian/README.md` § "Contrat de réponse") : messages dédiés pour
+      démarrage en cours, éviction Spot, plafond atteint - distinct du 429
+      de `RAG_MAX_CONCURRENT_CHATS` qui existe déjà côté backend.
+- [ ] Rattacher l'Action Group du budget existant au webhook
+      `POST /internal/budget-alert` du gardien (actuellement `contactGroups`
+      vide, alerte email seule).
 - [ ] Adapter `docker-compose.yml` pour la prod : retirer `redis`, config finale
       (`SECRET_KEY`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`,
       `CSRF_TRUSTED_ORIGINS`, `USE_X_FORWARDED_PROTO`, `TRUSTED_PROXY_COUNT`)
