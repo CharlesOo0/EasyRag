@@ -32,6 +32,17 @@ x-prod-env: &prod-env
   TRUSTED_PROXY_COUNT: "1"
 
 services:
+  # db, ollama, backend, frontend, caddy all get restart: unless-stopped -
+  # the guardian deallocates/starts this whole VM on a schedule (that's the
+  # point), and none of these come back on their own otherwise: dockerd
+  # itself only auto-starts a container on daemon boot if its restart
+  # policy says to, regardless of compose's depends_on (that's a `docker
+  # compose up`-time concept, not something the daemon enforces on its
+  # own). Confirmed missing the hard way: after the first real wake in
+  # prod, every container was sitting "Exited (0)" - the VM was up, the
+  # app wasn't. bootstrap is deliberately excluded: it's one-shot
+  # (migrate/model/corpus), already applied and persisted in the volumes,
+  # nothing depends on it running again on every wake.
   bootstrap:
     environment:
       <<: *prod-env
@@ -41,6 +52,7 @@ services:
     # Dev publishes 8000 straight to the host for local access - in prod
     # only Caddy talks to it, over the compose network.
     ports: !reset []
+    restart: unless-stopped
 
   frontend:
     build:
@@ -56,6 +68,7 @@ services:
     volumes: !reset []
     ports: !reset []
     environment: !reset []
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
       interval: 10s
@@ -63,11 +76,15 @@ services:
       retries: 5
       start_period: 20s
 
+  db:
+    restart: unless-stopped
+
   ollama:
     # Dev exposes this so the model can be poked at directly from the host;
     # in prod only the backend needs it, over the compose network - no
     # reason to publish it (Ollama has no auth of its own).
     ports: !reset []
+    restart: unless-stopped
 
   caddy:
     image: caddy:2-alpine
@@ -76,6 +93,7 @@ services:
     command: ["caddy", "run", "--config", "/etc/caddyfile", "--adapter", "caddyfile"]
     ports:
       - "8080:8080"
+    restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
