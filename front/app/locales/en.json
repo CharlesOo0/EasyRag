@@ -26,11 +26,18 @@
     "incomplete": "The connection dropped before the answer finished.",
     "emptyResponse": "The model returned nothing.",
     "retry": "Retry",
+    "waking": {
+      "coldStart": "The server is starting up (~1-3 minutes)",
+      "evicted": "Restarting after a brief interruption"
+    },
     "error": {
       "network": "Couldn't reach the server. Check your connection and try again.",
       "throttled": "Too many requests — wait a moment and try again.",
       "server": "The server hit an error generating the answer.",
-      "badRequest": "That question couldn't be processed."
+      "badRequest": "That question couldn't be processed.",
+      "hourCap": "This month's usage quota has been reached. Try again next month.",
+      "budget": "This month's budget has been reached. Try again next month.",
+      "wakingTimeout": "The server is taking too long to start. Try again in a moment."
     },
     "sources_one": "{{count}} source",
     "sources_other": "{{count}} sources",

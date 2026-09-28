@@ -28,6 +28,12 @@ export async function streamChat(
   }
 
   if (!response.ok || !response.body) {
+    if (response.status === 503) {
+      // .clone(): a body can only be read once, and readErrorDetail() below
+      // needs its own read if this one doesn't match the guardian's shape.
+      const guardian = await readGuardianResponse(response.clone());
+      if (guardian) return guardian;
+    }
     return {
       status: "error",
       kind: httpErrorKind(response.status),
@@ -86,6 +92,35 @@ function httpErrorKind(status: number): StreamErrorKind {
   if (status === 429) return "throttled";
   if (status === 400) return "bad-request";
   return "server";
+}
+
+/** Recognizes the guardian's response contract (guardian/README.md "Contrat
+ * de réponse") on a 503 and turns it into a StreamResult - or returns null
+ * if the body isn't that shape, so the caller falls back to the generic
+ * "server" error (a real backend 503 unrelated to the guardian). */
+async function readGuardianResponse(response: Response): Promise<StreamResult | null> {
+  let body: any;
+  try {
+    body = await response.json();
+  } catch {
+    return null;
+  }
+
+  if (body?.status === "waking_up") {
+    return {
+      status: "waking",
+      reason: body.reason === "evicted" ? "evicted" : "cold_start",
+      retryAfter: typeof body.retry_after === "number" ? body.retry_after : 5,
+    };
+  }
+  if (body?.status === "refused") {
+    return {
+      status: "error",
+      kind: body.reason === "budget_exceeded" ? "budget" : "hour-cap",
+      detail: String(body.reason ?? "refused"),
+    };
+  }
+  return null;
 }
 
 async function readErrorDetail(response: Response): Promise<string> {

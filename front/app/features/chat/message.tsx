@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { InlineMarkdown } from "~/features/corpus/markdown";
 import { useSourceViewer } from "./source-viewer";
-import type { ChatMessage, ChatSource, StreamErrorKind } from "./types";
+import type { ChatMessage, ChatSource, StreamErrorKind, WakingReason } from "./types";
 
 const CITATION_RE = /\[(\d+)\]/g;
 
@@ -27,10 +27,19 @@ export function MessageTurn({
   const sources = message.sources ?? [];
 
   const isEmptyDone =
-    !isUser && !message.streaming && !message.content && !message.error && !message.stopped;
+    !isUser &&
+    !message.streaming &&
+    !message.waking &&
+    !message.content &&
+    !message.error &&
+    !message.stopped;
+  // Retrying a refusal (quota/budget) would just get refused again until
+  // next month - offering it would be misleading, not just unhelpful.
+  const isTerminalRefusal = message.error?.kind === "hour-cap" || message.error?.kind === "budget";
   const showRetry =
     !isUser &&
     canRetry &&
+    !isTerminalRefusal &&
     (message.error || message.incomplete || message.stopped || isEmptyDone);
   const showSources = !isUser && !message.streaming && sources.length > 0;
 
@@ -58,7 +67,11 @@ export function MessageTurn({
         </div>
       )}
 
-      {message.streaming && !message.content && <SearchingIndicator label={t("chat.thinking")} />}
+      {message.waking ? (
+        <WakingIndicator reason={message.waking.reason} />
+      ) : (
+        message.streaming && !message.content && <SearchingIndicator label={t("chat.thinking")} />
+      )}
       {message.stopped && (
         <p className="mt-2 font-mono text-xs text-muted-foreground">{t("chat.stopped")}</p>
       )}
@@ -234,6 +247,25 @@ function SearchingIndicator({ label }: { label: string }) {
   );
 }
 
+/** The target VM is being (re)started by the guardian - see
+ * guardian/README.md "Contrat de réponse". Distinct from SearchingIndicator
+ * (that's a live backend just retrieving) because this can take minutes,
+ * not seconds, and the reason (cold start vs. an eviction retry) matters. */
+function WakingIndicator({ reason }: { reason: WakingReason }) {
+  const { t } = useTranslation();
+  return (
+    <p className="mt-2 flex items-center gap-2 font-mono text-xs text-muted-foreground">
+      <SearchingGlyph />
+      {t(reason === "evicted" ? "chat.waking.evicted" : "chat.waking.coldStart")}
+      <span aria-hidden="true" className="inline-flex">
+        <span className="dot-fade">.</span>
+        <span className="dot-fade [animation-delay:0.2s]">.</span>
+        <span className="dot-fade [animation-delay:0.4s]">.</span>
+      </span>
+    </p>
+  );
+}
+
 function SearchingGlyph() {
   return (
     <span className="relative inline-flex h-3.5 w-3.5 shrink-0 text-relief" aria-hidden="true">
@@ -255,5 +287,8 @@ function errorKey(kind: StreamErrorKind): string {
     throttled: "chat.error.throttled",
     server: "chat.error.server",
     "bad-request": "chat.error.badRequest",
+    "hour-cap": "chat.error.hourCap",
+    budget: "chat.error.budget",
+    "waking-timeout": "chat.error.wakingTimeout",
   }[kind];
 }
