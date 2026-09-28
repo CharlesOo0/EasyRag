@@ -19,6 +19,15 @@ complet - ce fichier ne couvre que la mise en route de ce service précis.
   large) - pas de clé/secret stocké.
 - Cette même identité a besoin d'un accès en écriture à la table de stockage
   (`Storage Table Data Contributor` sur le compte de stockage).
+- **Probes de santé explicites, obligatoires** - configurer `readinessProbe`
+  et `livenessProbe` sur `httpGet: /internal/healthz` (port 8080). Sans ça,
+  le probe HTTP par défaut de Container Apps tape sur `/` et traverse le
+  catch-all - **vérifié en conditions réelles** (28/09/2026) : ça réveille
+  la VM tout seul, sans aucun vrai trafic, et grignote le plafond d'heures
+  pour rien. Pas configurable via les flags simples de `az containerapp
+  create` - passer par un patch YAML (`az containerapp update --yaml`),
+  voir l'historique de déploiement dans `docs/azure-deployment-plan.md`
+  pour un exemple concret de spec `probes:`.
 
 ## Variables d'environnement
 

@@ -155,6 +155,41 @@ l'upgrade, donc pas liée au changement de plan - et vérifier en parallèle
 pourquoi `Azure subscription 1` est désactivée. Rien d'autre ne peut avancer
 côté provisioning tant que l'un des deux n'est pas résolu.
 
+## Gardien - premier déploiement réel (28/09/2026) - résultat
+
+Déploiement jetable (Container App dans l'environnement `portfolio-env`
+existant, VM cible temporaire, compte de stockage temporaire, ACR temporaire
+- tout supprimé après coup) pour lever les deux derniers doutes non
+vérifiables sans déploiement réel : l'identité managée en conditions
+réelles, et le build Docker.
+
+**Deux bugs réels trouvés, corrigés :**
+- `azure-identity==1.26.0` dans `requirements.txt` n'existe pas (version
+  inventée) - le build ACR a échoué dessus immédiatement. Corrigé à
+  `1.25.3` (dernière stable réelle, vérifiée sur PyPI).
+- **Le plus important** : sans probes explicites, le probe HTTP par défaut
+  de Container Apps tape sur `/` et traverse le catch-all du gardien -
+  **vérifié via les logs réels** (requête `GET / HTTP/1.1` depuis une IP
+  interne Azure `100.100.0.226`, plage CGNAT typique du plan de contrôle) :
+  ça réveille la VM tout seul, sans aucun trafic réel. Reproduit
+  (VM réveillée sans intervention), corrigé (probes `readinessProbe`/
+  `livenessProbe` en `httpGet: /internal/healthz`), re-testé (VM reste
+  éteinte 2 min sans y toucher, se réveille bien sur une vraie requête
+  `GET /chat`). Voir `guardian/README.md`.
+
+**Confirmé en conditions réelles :**
+- L'identité managée système fonctionne (`ManagedIdentityCredential`
+  visible dans les logs), les rôles RBAC (`Storage Table Data Contributor`,
+  `Virtual Machine Contributor`) suffisent une fois attribués.
+- Le cycle complet réveil réel (`GET /chat` -> VM passe de `deallocated` à
+  `running`) fonctionne de bout en bout avec de vraies ressources Azure.
+
+**Pas testé dans ce passage** : le proxying une fois la VM levée (la VM
+jetable n'avait pas la stack applicative ni le port 8080 ouvert au NSG,
+par la même prudence sécurité que le reste de la session) - déjà validé
+séparément en local avec deux vrais serveurs uvicorn (streaming SSE
+confirmé, écarts réels entre chunks sur une vraie socket).
+
 ## Test de charge réel (27-28/09/2026) - résultat
 
 Réalisé sur `Standard_D2ps_v6` (2 vCPU/8 Go, ARM64, Spot, France Central) -
@@ -224,9 +259,12 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
       le plafond n'est donc plus un levier de coût, juste une marge de
       sécurité contre un usage anormal. ~7,23 $/mois (~6,35 €) au pire cas
       (plafond atteint chaque mois). Valeur posée dans `guardian/.env.example`.
-- [ ] Déployer le gardien (Container App, identité managée + rôles RBAC,
-      compte de stockage pour l'état) et le tester en conditions réelles
-      contre la VM `D2ps_v6`.
+- [x] Déployer le gardien en conditions réelles (jetable) - fait, voir
+      section dédiée ci-dessus. Mécanique confirmée (identité managée,
+      RBAC, réveil réel, probes corrigés).
+- [ ] Déploiement définitif : pointer le gardien sur la vraie VM de prod
+      une fois celle-ci stabilisée (docker-compose prod, domaine, TLS -
+      items suivants), pas une VM jetable sans stack applicative.
 - [ ] Côté front, consommer le contrat de réponse du gardien
       (`guardian/README.md` § "Contrat de réponse") : messages dédiés pour
       démarrage en cours, éviction Spot, plafond atteint - distinct du 429
