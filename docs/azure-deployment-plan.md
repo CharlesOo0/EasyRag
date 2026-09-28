@@ -234,16 +234,14 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
       corrige l'hypothèse notée plus haut le 27/09.
 - [x] Confirmer si "Azure for Students" a un plafond de dépense intégré -
       non : passé en PAYG, `spendingLimit: Off` confirmé via l'API.
-- [ ] Rattacher une Action Group au budget existant
 - [x] **Test de charge réel** - fait sur `Standard_D2ps_v6` (voir section
       dédiée ci-dessus) : RAM ok (~4,5/7,7 Go), CPU limitant (2/4 requêtes
       simultanées en timeout) -> `RAG_MAX_CONCURRENT_CHATS` baissé à 2.
-- [ ] Choisir la taille de VM cible pour la prod entre `D2ps_v6` (ARM,
-      Spot dispo, le moins cher de loin, mais nécessite de valider le build
-      arm64 des images en conditions réelles - fait une fois pour le test,
-      pas encore éprouvé sur la durée) et `B2ms`/`D2s_v5` classiques
-      (x86, si un jour débloqués - quota DSv5 fermé, capacité B2ms à
-      revérifier périodiquement).
+- [x] Taille de VM cible pour la prod : **`D2ps_v6` (ARM, Spot)**, tranché -
+      utilisée avec succès à deux reprises (test de charge, déploiement du
+      gardien), build arm64 vérifié en conditions réelles les deux fois.
+      x86 (`B2ms`/`D2s_v5`) resterait un repli si `D2ps_v6` devenait
+      indisponible, pas une option à trancher activement.
 - [x] Code du "gardien" écrit (`guardian/`, FastAPI) : réveil/extinction de
       la VM, page d'attente, détection d'éviction Spot, plafond d'heures
       dur (refus, pas juste alerte), flag budget avec expiration
@@ -262,9 +260,10 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
 - [x] Déployer le gardien en conditions réelles (jetable) - fait, voir
       section dédiée ci-dessus. Mécanique confirmée (identité managée,
       RBAC, réveil réel, probes corrigés).
-- [ ] Déploiement définitif : pointer le gardien sur la vraie VM de prod
-      une fois celle-ci stabilisée (docker-compose prod, domaine, TLS -
-      items suivants), pas une VM jetable sans stack applicative.
+      (Pas d'étape "déploiement définitif du gardien" séparée : ça se
+      confond avec le déploiement général plus bas - pointer le gardien sur
+      la vraie VM n'a de sens qu'une fois docker-compose prod/domaine/TLS
+      en place, donc c'est le même événement, pas deux.)
 - [x] Côté front, consommer le contrat de réponse du gardien - fait
       (`front/app/features/chat/{api,hooks,message,types}.ts`) : réveil à
       froid et après éviction traités par une attente + nouvelle tentative
@@ -280,9 +279,15 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
 - [ ] Rattacher l'Action Group du budget existant au webhook
       `POST /internal/budget-alert` du gardien (actuellement `contactGroups`
       vide, alerte email seule).
-- [ ] Adapter `docker-compose.yml` pour la prod : retirer `redis`, config finale
-      (`SECRET_KEY`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`,
-      `CSRF_TRUSTED_ORIGINS`, `USE_X_FORWARDED_PROTO`, `TRUSTED_PROXY_COUNT`)
+- [x] Retirer `redis` de `docker-compose.yml` (service, dépendance du
+      backend, volume, `REDIS_URL`) - fait (28/09/2026), `README.md` et
+      `CLAUDE.md` mis à jour en cohérence. Validé par `docker compose
+      config` (Docker Desktop non lancé pour un vrai `up` cette fois) - le
+      pattern lui-même (pas de redis, LocMemCache) avait déjà tourné avec
+      succès sur la VM du test de charge.
+- [ ] Config prod restante dans `docker-compose.yml` (`SECRET_KEY`,
+      `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`,
+      `USE_X_FORWARDED_PROTO`, `TRUSTED_PROXY_COUNT`)
 - [ ] Acheter/configurer le domaine, pointer le DNS
 - [ ] TLS (Let's Encrypt via le reverse-proxy, ex. Caddy) devant l'app
 - [ ] Déployer pour de vrai, vérifier `/chat` et `/corpus` en bout en bout sur
