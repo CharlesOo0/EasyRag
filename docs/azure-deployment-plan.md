@@ -340,13 +340,35 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
   compromis pour ce projet, pas une vraie exposition puisque l'app est
   publique sans authentification de toute façon).
 
-- [ ] Attacher `easyrag.dev` à `easyrag-guardian` (Container App
-      persistante, existe maintenant) - récupérer les enregistrements DNS
-      exacts, les poser sur Namecheap, attendre l'émission du certificat.
-- [ ] Suivre le tout premier boot complet (ingestion du corpus, pull du modèle
-      Ollama) jusqu'au bout, comme `docker compose logs -f bootstrap` en local
-      - **fait indirectement** aujourd'hui via le dump restauré + vérification
-      idempotente (`0 created, 0 updated, 195 unchanged`), pas un vrai premier
-      boot à froid sans dump - à garder à l'esprit si jamais la VM devait être
-      reconstruite entièrement from scratch un jour.
-- [ ] Adapter `docs/DEPLOYMENT.md` avec le chemin Azure réel (pas hypothétique)
+- [x] **`easyrag.dev` en ligne (28/09/2026)** - domaine attaché à
+      `easyrag-guardian`, certificat managé Azure émis et lié
+      (`bindingType: SniEnabled`). Testé de bout en bout en conditions
+      réelles : accueil, `/chat`, `/corpus`, API corpus, et le chat en
+      streaming réel - tout en `HTTP 200` sur le vrai domaine public.
+
+  **Deux vrais problèmes trouvés en attachant le domaine :**
+  - Enregistrements DNS : il faut **3** entrées, pas 2 comme documenté au
+    départ - `asuid.easyrag.dev` (TXT, vérification de propriété du
+    domaine) ET `_dnsauth` (TXT, séparé, spécifique à l'émission du
+    certificat - jeton différent, imprimé par la commande de liaison elle-
+    même). Supprimer/recréer le certificat génère un **nouveau jeton à
+    chaque fois** - ne pas le faire par réflexe si ça bloque, ça repousse
+    juste le problème.
+  - **Bug réel dans `guardian/app/proxy.py`** : `Host` était listé comme
+    en-tête "hop-by-hop" à retirer (faux - RFC 7230 ne le classe pas
+    ainsi). Résultat : le gardien forwardait vers la VM avec le `Host` de
+    l'IP de la VM au lieu du vrai domaine visité, donc `ALLOWED_HOSTS`
+    rejetait systématiquement tout appel réel passant par le gardien (400
+    générique) - invisible sur tous les tests précédents parce qu'ils
+    simulaient tous le `Host` manuellement via `curl -H`. Corrigé, test de
+    régression permanent ajouté (`guardian/tests/test_proxy.py`, deux
+    vrais serveurs uvicorn, vérifié qu'il échoue sans le correctif avant
+    de confirmer qu'il passe avec).
+  - **Leçon annexe** : mettre à jour une Container App avec la même
+    référence d'image (`:latest`) ne déclenche **pas** un nouveau pull -
+    Azure ne recrée pas de révision si la chaîne de référence ne change
+    pas, même si le contenu de l'image a changé côté registre. Utiliser un
+    tag unique par build pour forcer un vrai déploiement.
+- [x] `docs/DEPLOYMENT.md` réécrit avec le chemin Azure réel (VM + gardien +
+      Caddy + TLS managé), plus hypothétique - garde "Simplest path"/"Managed
+      services path" génériques uniquement pour qui ne veut pas du gardien.
