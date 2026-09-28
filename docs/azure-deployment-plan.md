@@ -303,12 +303,13 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
       directement par un visiteur). Le tronçon gardien -> VM
       (`GUARDIAN_VM_ORIGIN`) reste en HTTP simple, à restreindre côté NSG
       aux IP sortantes d'Azure Container Apps plutôt qu'à chiffrer.
-- [ ] Domaine en cours d'achat sur Namecheap (utilisateur). **Dépendance à
-      noter** : les enregistrements DNS exacts (TXT de vérification, CNAME)
-      ne peuvent être générés qu'une fois une vraie Container App
-      persistante déployée (celles utilisées jusqu'ici étaient jetables) -
-      donc pas une étape isolée avant le déploiement réel, mais faite en
-      même temps que lui (item suivant).
+- [ ] Domaine choisi : **`easyrag.dev`** (Namecheap, ~11 $/an) - achat
+      encore à faire par l'utilisateur. **Dépendance à noter** : les
+      enregistrements DNS exacts (TXT de vérification, CNAME) ne peuvent
+      être générés qu'une fois une vraie Container App persistante
+      déployée (celles utilisées jusqu'ici étaient jetables) - donc pas une
+      étape isolée avant le déploiement réel, mais faite en même temps que
+      lui (item suivant).
 - [ ] Déployer pour de vrai (Container App persistante + vraie VM prod) :
       attacher le domaine une fois acheté, poser les enregistrements DNS
       qu'Azure donnera à ce moment-là sur Namecheap, laisser Azure émettre
