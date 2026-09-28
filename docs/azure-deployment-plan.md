@@ -39,7 +39,10 @@ ce n'est pas stabilisé.
   cache de build Docker qui s'accumule dans le temps, pour ~1,50 $/mois
   d'écart seulement. Pas d'usage justifiant plus que 32 Go pour l'instant.
 - **Domaine propre** (acheté par l'utilisateur) plutôt que le nom Azure par
-  défaut - permet un vrai certificat TLS Let's Encrypt.
+  défaut - permet un vrai certificat TLS. Écrit avant l'existence du
+  gardien : à l'origine pensé comme Let's Encrypt via Caddy sur la VM,
+  révisé ensuite (28/09/2026) en certificat managé Azure sur la Container
+  App - voir la décision TLS plus bas.
 
 ## Chiffres réels (API de pricing Azure, région France Central, vérifiés le
 27/09/2026 - à revérifier si beaucoup de temps passe avant de provisionner)
@@ -292,9 +295,24 @@ confirmé idempotent (`0 created, 0 updated, 195 unchanged`).
       `TRUSTED_PROXY_COUNT=1` en dur) + `.env.prod.example`. Fusion vérifiée
       via `docker compose config` (échec loud sans valeurs, résolution
       correcte avec).
-- [ ] Acheter/configurer le domaine, pointer le DNS
-- [ ] TLS (Let's Encrypt via le reverse-proxy, ex. Caddy) devant l'app
-- [ ] Déployer pour de vrai, vérifier `/chat` et `/corpus` en bout en bout sur
+- [x] Décision TLS (28/09/2026) - **Option A : certificat managé au niveau
+      du gardien** (domaine personnalisé + certificat géré par Azure
+      directement sur la Container App), pas de Caddy/Let's Encrypt sur la
+      VM comme envisagé à l'origine dans `docs/DEPLOYMENT.md` (écrit avant
+      l'existence du gardien - la VM n'est plus jamais contactée
+      directement par un visiteur). Le tronçon gardien -> VM
+      (`GUARDIAN_VM_ORIGIN`) reste en HTTP simple, à restreindre côté NSG
+      aux IP sortantes d'Azure Container Apps plutôt qu'à chiffrer.
+- [ ] Domaine en cours d'achat sur Namecheap (utilisateur). **Dépendance à
+      noter** : les enregistrements DNS exacts (TXT de vérification, CNAME)
+      ne peuvent être générés qu'une fois une vraie Container App
+      persistante déployée (celles utilisées jusqu'ici étaient jetables) -
+      donc pas une étape isolée avant le déploiement réel, mais faite en
+      même temps que lui (item suivant).
+- [ ] Déployer pour de vrai (Container App persistante + vraie VM prod) :
+      attacher le domaine une fois acheté, poser les enregistrements DNS
+      qu'Azure donnera à ce moment-là sur Namecheap, laisser Azure émettre
+      le certificat, vérifier `/chat` et `/corpus` en bout en bout sur
       l'URL publique
 - [ ] Suivre le tout premier boot complet (ingestion du corpus, pull du modèle
       Ollama) jusqu'au bout, comme `docker compose logs -f bootstrap` en local
