@@ -8,6 +8,15 @@ import httpx
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 
+# RFC 7230 hop-by-hop headers - Host is deliberately NOT here. It's an
+# end-to-end header, and stripping it was a real bug: httpx would then set
+# it from the VM's own address (e.g. "20.19.121.97:8080") instead of the
+# public domain the visitor actually used, so Django's ALLOWED_HOSTS check
+# rejected every request through the guardian with a generic 400. Missed
+# by every earlier manual test against the VM directly, because those all
+# passed an explicit `-H 'Host: easyrag.dev'` to simulate the real domain -
+# which happened to paper over the guardian stripping that exact header
+# instead of forwarding it.
 _HOP_BY_HOP_HEADERS = {
     "connection",
     "keep-alive",
@@ -17,7 +26,6 @@ _HOP_BY_HOP_HEADERS = {
     "trailers",
     "transfer-encoding",
     "upgrade",
-    "host",
 }
 
 
