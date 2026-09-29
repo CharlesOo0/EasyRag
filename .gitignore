@@ -1,5 +1,6 @@
 .DS_Store
 .env
+.env.prod
 front/.env
 /node_modules/
 
