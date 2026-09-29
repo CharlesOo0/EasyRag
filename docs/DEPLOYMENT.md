@@ -177,6 +177,7 @@ cd front && npm audit              # frontend dependencies
 | `RAG_CHAT_THROTTLE` / `RAG_READ_THROTTLE` | per-IP request rate (default `10/min` / `120/min`) |
 | `TRUSTED_PROXY_COUNT` | `1` in prod (one Caddy hop) — see above |
 | `VITE_GA_MEASUREMENT_ID` | optional, GA4 measurement ID — build-time only, see "Analytics" below |
+| `GA_MP_API_SECRET` | optional, GA4 Measurement Protocol secret — runtime only, see "Analytics" below |
 
 The `RAG_*` retrieval knobs (see [ARCHITECTURE.md](ARCHITECTURE.md)) rarely need
 changing in prod.
@@ -213,6 +214,18 @@ Set `VITE_GA_MEASUREMENT_ID` in `.env.prod` to a GA4 measurement ID
 above: it's baked into the bundle, so it only takes effect on the next
 `--build`. Left empty (the default), the build ships with no analytics at
 all - no script, no cookie, nothing to load.
+
+The client-side script above only counts visitors whose browser actually
+runs it - an adblocker or tracking-protection extension silently drops it,
+underreporting traffic. Also set `GA_MP_API_SECRET` (GA4 admin > Data
+streams > your stream > Measurement Protocol API secrets > Create) to have
+the frontend's SSR server report a `page_request` event directly on every
+page load, immune to anything blocked client-side - it's a plain runtime env
+var (`docker-compose.prod.yml`'s `frontend.environment`), not a build arg,
+since unlike the measurement ID this one is a real secret and must never end
+up baked into the image. Shows up in GA4 as its own event, deliberately
+separate from the client `page_view` - it's a raw count, not a replacement
+for the richer session/engagement data only a real browser can report.
 
 ## Not using Ollama?
 
