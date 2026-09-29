@@ -5,6 +5,12 @@ au-delà du plafond d'heures/budget, et détecte les évictions Spot. Voir
 `docs/azure-deployment-plan.md` (racine du repo) pour le contexte/raisonnement
 complet - ce fichier ne couvre que la mise en route de ce service précis.
 
+## Image
+
+Publiée sur `ghcr.io/charlesoo0/easyrag-guardian` (public, gratuit) par
+`.github/workflows/deploy-guardian.yml`, déclenché sur tout push touchant ce
+dossier sur `master`, ou manuellement via `workflow_dispatch`. Voir #84.
+
 ## Contraintes de déploiement (non négociables, pas juste des préférences)
 
 - **Exactement 1 réplique** (`minReplicas=1`, `maxReplicas=1` sur la Container
