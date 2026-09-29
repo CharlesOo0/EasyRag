@@ -17,6 +17,10 @@ FROM node:24-alpine AS build-env
 # rather than silently bake in a dev fallback.
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+# Optional, unlike VITE_API_URL above - an empty value just means root.tsx
+# skips loading GA entirely, no failure needed.
+ARG VITE_GA_MEASUREMENT_ID
+ENV VITE_GA_MEASUREMENT_ID=$VITE_GA_MEASUREMENT_ID
 COPY . /app/
 COPY --from=development-dependencies-env /app/node_modules /app/node_modules
 WORKDIR /app

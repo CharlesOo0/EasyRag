@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -5,12 +6,41 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 import "./i18n";
+
+// Unset outside a real prod build (front/Dockerfile only bakes this in when
+// GA_MEASUREMENT_ID is present in .env.prod - see docs/DEPLOYMENT.md), so
+// local dev and PR previews never send traffic to GA.
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as
+  | string
+  | undefined;
+
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+// gtag.js's own auto page_view only fires once, on the script's initial
+// load - client-side navigations via React Router's <Link> never reload the
+// page, so without this hook every route after the first would go unseen.
+function useGoogleAnalyticsPageViews() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!GA_MEASUREMENT_ID || typeof window.gtag !== "function") return;
+    window.gtag("event", "page_view", {
+      page_path: location.pathname + location.search,
+    });
+  }, [location]);
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -36,6 +66,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {GA_MEASUREMENT_ID && (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+            />
+            <script
+              // send_page_view: false - useGoogleAnalyticsPageViews sends every
+              // page_view itself, including the first, so it's not double-counted.
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}',{send_page_view:false});window.gtag=gtag;`,
+              }}
+            />
+          </>
+        )}
       </head>
       <body>
         {children}
@@ -47,6 +92,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useGoogleAnalyticsPageViews();
   return <Outlet />;
 }
 

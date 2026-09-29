@@ -76,6 +76,9 @@ services:
         # Same-origin relative path: correct whether reached directly or
         # via the guardian in front, whatever domain ends up in the URL bar.
         VITE_API_URL: /api
+        # Optional - unset in .env.prod means the build just skips GA (see
+        # front/root.tsx), no need for a `:?` required check like above.
+        VITE_GA_MEASUREMENT_ID: ${VITE_GA_MEASUREMENT_ID:-}
     command: null
     volumes: !reset []
     ports: !reset []
