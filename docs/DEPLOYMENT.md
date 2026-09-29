@@ -176,6 +176,7 @@ cd front && npm audit              # frontend dependencies
 | `RAG_MAX_HISTORY_CHARS` | cap on client-supplied conversation history fed to the prompt (default `4000`) |
 | `RAG_CHAT_THROTTLE` / `RAG_READ_THROTTLE` | per-IP request rate (default `10/min` / `120/min`) |
 | `TRUSTED_PROXY_COUNT` | `1` in prod (one Caddy hop) — see above |
+| `VITE_GA_MEASUREMENT_ID` | optional, GA4 measurement ID — build-time only, see "Analytics" below |
 
 The `RAG_*` retrieval knobs (see [ARCHITECTURE.md](ARCHITECTURE.md)) rarely need
 changing in prod.
@@ -203,6 +204,15 @@ same SSR build standalone (`VITE_API_URL=https://your-domain/api npm run
 build && npm run start`), or serve `front/build/client` statically and
 proxy `/api` to the backend from the same origin (`VITE_API_URL=/api`
 still works, same reasoning).
+
+### Analytics (optional)
+
+Set `VITE_GA_MEASUREMENT_ID` in `.env.prod` to a GA4 measurement ID
+(`G-XXXXXXXXXX`) to load Google Analytics on the built frontend - see
+`front/app/root.tsx`. Same build-time-only reasoning as `VITE_API_URL`
+above: it's baked into the bundle, so it only takes effect on the next
+`--build`. Left empty (the default), the build ships with no analytics at
+all - no script, no cookie, nothing to load.
 
 ## Not using Ollama?
 
