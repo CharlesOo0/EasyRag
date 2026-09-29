@@ -82,7 +82,13 @@ services:
     command: null
     volumes: !reset []
     ports: !reset []
-    environment: !reset []
+    # Unlike VITE_GA_MEASUREMENT_ID above, this one is a real secret and must
+    # stay a runtime env var, never a build arg - a build arg ends up baked
+    # into the image (readable via `docker history`), which a genuine secret
+    # must never be. root.tsx reads it via `process.env`, not
+    # `import.meta.env`, for the same reason.
+    environment:
+      GA_MP_API_SECRET: ${GA_MP_API_SECRET:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
