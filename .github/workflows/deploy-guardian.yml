@@ -1,0 +1,41 @@
+name: Deploy guardian image
+
+# Only the guardian's own image (guardian/) - the VM app stack has its
+# separate pipeline in deploy.yml, see #78. This workflow only publishes
+# the image to ghcr.io; bumping the live Container App to the new tag and
+# retiring the old ACR are manual steps done once, see #84.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "guardian/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      # ghcr.io requires a lowercase image path - the GitHub org/user here
+      # ("CharlesOo0") is mixed case, so it's hardcoded rather than derived
+      # from github.repository_owner.
+      - uses: docker/build-push-action@v6
+        with:
+          context: guardian
+          push: true
+          tags: |
+            ghcr.io/charleso0/easyrag-guardian:latest
+            ghcr.io/charleso0/easyrag-guardian:${{ github.sha }}
