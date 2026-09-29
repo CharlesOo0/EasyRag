@@ -41,5 +41,5 @@ jobs:
           context: guardian
           push: true
           tags: |
-            ghcr.io/charleso0/easyrag-guardian:latest
-            ghcr.io/charleso0/easyrag-guardian:${{ github.sha }}
+            ghcr.io/charlesoo0/easyrag-guardian:latest
+            ghcr.io/charlesoo0/easyrag-guardian:${{ github.sha }}
