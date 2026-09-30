@@ -48,10 +48,10 @@ def make_runtime(*, vm_state=VmPowerState.DEALLOCATED, **settings_overrides) -> 
     return runtime, vm, state
 
 
-# --- scan filter ------------------------------------------------------------
+# --- wake path allowlist -----------------------------------------------------
 
 
-def test_known_scan_path_returns_404_without_waking_vm():
+def test_unrecognized_path_returns_404_without_waking_vm():
     runtime, vm, state = make_runtime()
     client = make_client(runtime)
 
@@ -62,14 +62,44 @@ def test_known_scan_path_returns_404_without_waking_vm():
     assert len(state.list_sessions()) == 0
 
 
-def test_scan_path_does_not_bump_last_request_at():
-    runtime, vm, state = make_runtime()
+def test_unrecognized_path_does_not_bump_last_request_at_even_while_running(monkeypatch):
+    runtime, vm, state = make_runtime(vm_state=VmPowerState.RUNNING)
+    runtime.cached_power_state = VmPowerState.RUNNING
+
+    async def fake_forward(request, origin, timeout):
+        return PlainTextResponse("upstream ok")
+
+    monkeypatch.setattr("app.main.forward", fake_forward)
     before = state.get_flags().last_request_at
     client = make_client(runtime)
 
     client.get("/wp-admin/setup-config.php")
 
     assert state.get_flags().last_request_at == before
+
+
+# --- bot user-agent filter ---------------------------------------------------
+
+
+def test_scripted_user_agent_on_a_real_path_does_not_wake_vm():
+    runtime, vm, state = make_runtime()
+    client = make_client(runtime)
+
+    resp = client.get("/chat", headers={"user-agent": "curl/8.4.0"})
+
+    assert resp.status_code == 404
+    assert vm.start_calls == 0
+    assert len(state.list_sessions()) == 0
+
+
+def test_missing_user_agent_on_a_real_path_does_not_wake_vm():
+    runtime, vm, state = make_runtime()
+    client = make_client(runtime)
+
+    resp = client.get("/chat", headers={"user-agent": ""})
+
+    assert resp.status_code == 404
+    assert vm.start_calls == 0
 
 
 # --- wake path ----------------------------------------------------------
@@ -116,7 +146,7 @@ def test_concurrent_requests_only_start_the_vm_once():
         async with AsyncClient(
             transport=ASGITransport(app=test_app), base_url="http://test"
         ) as client:
-            return await asyncio.gather(client.get("/a"), client.get("/b"), client.get("/c"))
+            return await asyncio.gather(client.get("/chat"), client.get("/corpus"), client.get("/"))
 
     responses = asyncio.run(fire())
     assert all(r.status_code == 503 for r in responses)
