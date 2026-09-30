@@ -78,6 +78,30 @@ def test_unrecognized_path_does_not_bump_last_request_at_even_while_running(monk
     assert state.get_flags().last_request_at == before
 
 
+# --- bot user-agent filter ---------------------------------------------------
+
+
+def test_scripted_user_agent_on_a_real_path_does_not_wake_vm():
+    runtime, vm, state = make_runtime()
+    client = make_client(runtime)
+
+    resp = client.get("/chat", headers={"user-agent": "curl/8.4.0"})
+
+    assert resp.status_code == 404
+    assert vm.start_calls == 0
+    assert len(state.list_sessions()) == 0
+
+
+def test_missing_user_agent_on_a_real_path_does_not_wake_vm():
+    runtime, vm, state = make_runtime()
+    client = make_client(runtime)
+
+    resp = client.get("/chat", headers={"user-agent": ""})
+
+    assert resp.status_code == 404
+    assert vm.start_calls == 0
+
+
 # --- wake path ----------------------------------------------------------
 
 

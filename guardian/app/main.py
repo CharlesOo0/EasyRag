@@ -22,6 +22,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app import pages
+from app.bot_user_agents import is_blocked_user_agent
 from app.config import Settings, load_settings
 from app.guard_logic import can_wake, is_idle, utcnow
 from app.proxy import UpstreamUnreachable, forward
@@ -53,12 +54,15 @@ class GuardianRuntime:
 
     async def handle_request(self, request: Request):
         path = request.url.path
+        user_agent = request.headers.get("user-agent")
+        # Rejected before touching last_request_at too, not just before the
+        # wake decision - junk traffic must not keep an already-running VM
+        # artificially "active" and delay its idle shutdown either.
         if not is_allowed_wake_path(path):
-            # Rejected before touching last_request_at too, not just before
-            # the wake decision - junk traffic must not keep an already-
-            # running VM artificially "active" and delay its idle shutdown
-            # either.
             logger.info("rejected unrecognized path: %s", path)
+            return PlainTextResponse("Not Found", status_code=404)
+        if is_blocked_user_agent(user_agent):
+            logger.info("rejected non-browser user agent: %s (%s)", user_agent, path)
             return PlainTextResponse("Not Found", status_code=404)
 
         now = utcnow()

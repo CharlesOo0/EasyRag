@@ -75,9 +75,12 @@ jobs:
           echo "::error::Deploy command never succeeded" && exit 1
 
       - name: Verify the site is back up
+        # -A: the guardian now rejects curl's default User-Agent as a bot
+        # signature (guardian/app/bot_user_agents.py) - without this flag
+        # this check would 404 even on a healthy deploy.
         run: |
           for i in $(seq 1 10); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" -m 15 https://easyrag.dev/ || true)
+            code=$(curl -s -o /dev/null -w "%{http_code}" -m 15 -A "Mozilla/5.0 (compatible; EasyRagDeployCheck/1.0)" https://easyrag.dev/ || true)
             if [ "$code" = "200" ]; then
               echo "Site healthy (HTTP $code)"
               exit 0
