@@ -48,6 +48,30 @@ def make_runtime(*, vm_state=VmPowerState.DEALLOCATED, **settings_overrides) -> 
     return runtime, vm, state
 
 
+# --- scan filter ------------------------------------------------------------
+
+
+def test_known_scan_path_returns_404_without_waking_vm():
+    runtime, vm, state = make_runtime()
+    client = make_client(runtime)
+
+    resp = client.get("/.env")
+
+    assert resp.status_code == 404
+    assert vm.start_calls == 0
+    assert len(state.list_sessions()) == 0
+
+
+def test_scan_path_does_not_bump_last_request_at():
+    runtime, vm, state = make_runtime()
+    before = state.get_flags().last_request_at
+    client = make_client(runtime)
+
+    client.get("/wp-admin/setup-config.php")
+
+    assert state.get_flags().last_request_at == before
+
+
 # --- wake path ----------------------------------------------------------
 
 

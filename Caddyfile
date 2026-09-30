@@ -15,6 +15,17 @@
 # here genuinely did arrive as https - hardcode it rather than trust a
 # passed-through header that Caddy would otherwise clobber anyway.
 :8080 {
+	# stdout, not a file: `docker logs` already persists this across VM
+	# reboots (confirmed 2026-09-30 - the container is restarted, not
+	# recreated, so its json-file log survives deallocate/start cycles),
+	# no extra volume needed. There was previously no access log at all
+	# here, which is why investigating scan/abuse traffic had to go
+	# through the guardian's own logs instead.
+	log {
+		output stdout
+		format json
+	}
+
 	handle /api/* {
 		reverse_proxy backend:8000 {
 			header_up X-Forwarded-Proto https
