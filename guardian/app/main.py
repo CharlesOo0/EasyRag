@@ -25,6 +25,7 @@ from app import pages
 from app.config import Settings, load_settings
 from app.guard_logic import can_wake, is_idle, utcnow
 from app.proxy import UpstreamUnreachable, forward
+from app.scan_filter import is_known_scan_path
 from app.state import Flags, StateStore, TableStateStore
 from app.vm_control import VmControl, VmControlError, VmPowerState
 
@@ -51,6 +52,11 @@ class GuardianRuntime:
             return VmPowerState.UNKNOWN
 
     async def handle_request(self, request: Request):
+        path = request.url.path
+        if is_known_scan_path(path):
+            logger.info("blocked scan-signature request: %s", path)
+            return PlainTextResponse("Not Found", status_code=404)
+
         now = utcnow()
         is_api = request.url.path.startswith("/api/")
 
