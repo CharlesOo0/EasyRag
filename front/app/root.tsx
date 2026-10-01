@@ -44,6 +44,14 @@ const GA_MP_API_SECRET: string | undefined =
 // are meant to be compared, not merged.
 async function trackServerPageRequest(request: Request) {
   if (!GA_MEASUREMENT_ID || !GA_MP_API_SECRET) return;
+  // docker-compose.prod.yml's frontend healthcheck (`wget --spider
+  // http://localhost:3000`, every 10s) hits this same loader directly on
+  // the container's loopback - it never goes through the guardian, so
+  // that layer's own User-Agent filter never sees it. Caddy genuinely
+  // needs this healthcheck (depends_on: service_healthy), so skip just
+  // the GA side-effect here rather than touching the healthcheck itself.
+  const userAgent = request.headers.get("user-agent") ?? "";
+  if (userAgent.includes("Wget")) return;
   const url = new URL(request.url);
   try {
     await fetch(
