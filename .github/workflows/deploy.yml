@@ -35,9 +35,16 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       # The guardian may have put the VM to sleep - wake it before trying to
-      # deploy onto it. `az vm start` on an already-running VM is a safe no-op.
+      # deploy onto it. Not `az vm start` directly: that bypasses the
+      # guardian, whose own idle-shutdown tick has no idea a legitimate wake
+      # just happened and can deallocate the VM again moments later - hit
+      # for real in prod (2026-10-01), start+deallocate landed within a
+      # second of each other, failing this whole job. Hitting the real site
+      # instead updates the guardian's own bookkeeping, so its tick won't
+      # treat the VM as idle. A non-200 here is expected (503 "waking up")
+      # and fine - the next step's own retry loop waits out the actual boot.
       - name: Wake the VM
-        run: az vm start --resource-group easyrag-prod-rg --name easyrag-prod-vm
+        run: curl -s -o /dev/null -m 15 -A "Mozilla/5.0 (compatible; EasyRagDeployWake/1.0)" https://easyrag.dev/ || true
 
       # az vm run-command executes as root on the VM through the Azure API -
       # no SSH port needs to be open to GitHub's runner IP ranges for this.
